@@ -35,7 +35,7 @@ Busca o agendamento e o cliente associado, chama `agendamento.marcarNoShow(agora
 
 ## ExpirarReservasPendentesUseCase
 
-Sem comando (nenhum parâmetro do chamador — usa `Clock.agora()` internamente). Busca todos os agendamentos `PENDENTE_PAGAMENTO`, chama `expirarSeNecessario` em cada um, persiste os que expiraram. Retorna a quantidade expirada. Pensado para ser acionado por um scheduler (`@Scheduled`) — o scheduler em si ainda não foi implementado (ver `04-roadmap.md`).
+Sem comando (nenhum parâmetro do chamador — usa `Clock.agora()` internamente). Busca todos os agendamentos `PENDENTE_PAGAMENTO`, chama `expirarSeNecessario` em cada um, persiste os que expiraram. Retorna a quantidade expirada. Acionado periodicamente por `ExpiracaoReservaScheduler` (`adapter/in/scheduler/`), um `@Scheduled` com `initialDelay`/`fixedDelay` configuráveis via `agendamento.expiracao.intervalo-ms` (padrão 60s) — o delay inicial evita que o scheduler dispare no instante em que o contexto Spring sobe (o que aconteceria por padrão com `fixedDelay` sozinho), o que seria ruído em todo teste que carrega o contexto completo.
 
 ## ProcessarWebhookPagamentoUseCase
 
