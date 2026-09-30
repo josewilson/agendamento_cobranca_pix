@@ -17,8 +17,11 @@ import org.springframework.stereotype.Component;
 /**
  * Reage aos eventos de dominio publicados via PublicadorDeEventos (ver
  * adapter/out/evento/PublicadorDeEventosSpring) disparando notificacoes ao cliente.
- * Falhas de envio sao logadas, nunca propagadas: um e-mail que falha nao pode derrubar
- * o caso de uso que o originou (criar/confirmar/cancelar agendamento ja foi persistido).
+ * Envia por dois canais — EMAIL (registro formal) e WHATSAPP (canal que o cliente brasileiro
+ * de fato confere para esse tipo de aviso; SMS fica disponivel mas nao e usado aqui, ver
+ * specs/04-roadmap.md) — cada um isolado: a falha de um canal nunca impede o outro nem
+ * propaga para o caso de uso que originou o evento (criar/confirmar/cancelar ja foi
+ * persistido antes deste efeito colateral).
  */
 @Component
 public class NotificacaoEventListener {
@@ -53,12 +56,21 @@ public class NotificacaoEventListener {
         try {
             clienteRepository.buscarPorId(clienteId).ifPresent(cliente -> enviar(cliente, assunto, mensagem));
         } catch (RuntimeException ex) {
-            log.warn("Falha ao notificar cliente {} ({}): {}", clienteId, assunto, ex.getMessage());
+            log.warn("Falha ao buscar cliente {} para notificar ({}): {}", clienteId, assunto, ex.getMessage());
         }
     }
 
     private void enviar(Cliente cliente, String assunto, String mensagem) {
-        Notificacao notificacao = new Notificacao(CanalNotificacao.EMAIL, cliente.contato().email(), assunto, mensagem);
-        notificacaoDispatcher.enviar(notificacao);
+        enviarPorCanal(new Notificacao(CanalNotificacao.EMAIL, cliente.contato().email(), assunto, mensagem));
+        enviarPorCanal(new Notificacao(CanalNotificacao.WHATSAPP, cliente.contato().telefone(), assunto, mensagem));
+    }
+
+    private void enviarPorCanal(Notificacao notificacao) {
+        try {
+            notificacaoDispatcher.enviar(notificacao);
+        } catch (RuntimeException ex) {
+            log.warn("Falha ao enviar notificacao via {} para {}: {}",
+                    notificacao.canal(), notificacao.destinatario(), ex.getMessage());
+        }
     }
 }

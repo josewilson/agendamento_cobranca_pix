@@ -43,7 +43,14 @@ class NotificacaoEventListenerTest {
         clienteRepository.salvar(cliente);
 
         notificacoesCapturadas = new ArrayList<>();
-        EnviadorDeNotificacao enviadorCapturador = new EnviadorDeNotificacao() {
+        EnviadorDeNotificacao enviadorEmailCapturador = enviadorCapturador(CanalNotificacao.EMAIL);
+        EnviadorDeNotificacao enviadorWhatsAppCapturador = enviadorCapturador(CanalNotificacao.WHATSAPP);
+        NotificacaoDispatcher dispatcher = new NotificacaoDispatcher(List.of(enviadorEmailCapturador, enviadorWhatsAppCapturador));
+        listener = new NotificacaoEventListener(clienteRepository, dispatcher);
+    }
+
+    private EnviadorDeNotificacao enviadorCapturador(CanalNotificacao canal) {
+        return new EnviadorDeNotificacao() {
             @Override
             public void enviar(Notificacao notificacao) {
                 notificacoesCapturadas.add(notificacao);
@@ -51,11 +58,9 @@ class NotificacaoEventListenerTest {
 
             @Override
             public CanalNotificacao canalSuportado() {
-                return CanalNotificacao.EMAIL;
+                return canal;
             }
         };
-        NotificacaoDispatcher dispatcher = new NotificacaoDispatcher(List.of(enviadorCapturador));
-        listener = new NotificacaoEventListener(clienteRepository, dispatcher);
     }
 
     private Periodo periodoExemplo() {
@@ -64,21 +69,28 @@ class NotificacaoEventListenerTest {
     }
 
     @Test
-    void deveNotificarClienteAoCriarAgendamento() {
+    void deveNotificarClientePorEmailEWhatsAppAoCriarAgendamento() {
         listener.aoCriarAgendamento(new AgendamentoCriado(AgendamentoId.novo(), PrestadorId.novo(), cliente.id(),
                 periodoExemplo(), Instant.now()));
 
-        assertThat(notificacoesCapturadas).hasSize(1);
-        assertThat(notificacoesCapturadas.get(0).destinatario()).isEqualTo("maria@exemplo.com");
-        assertThat(notificacoesCapturadas.get(0).canal()).isEqualTo(CanalNotificacao.EMAIL);
+        assertThat(notificacoesCapturadas).hasSize(2);
+        assertThat(notificacoesCapturadas)
+                .anySatisfy(n -> {
+                    assertThat(n.canal()).isEqualTo(CanalNotificacao.EMAIL);
+                    assertThat(n.destinatario()).isEqualTo("maria@exemplo.com");
+                })
+                .anySatisfy(n -> {
+                    assertThat(n.canal()).isEqualTo(CanalNotificacao.WHATSAPP);
+                    assertThat(n.destinatario()).isEqualTo("11987654321");
+                });
     }
 
     @Test
     void deveNotificarClienteAoConfirmarAgendamento() {
         listener.aoConfirmarAgendamento(new AgendamentoConfirmado(AgendamentoId.novo(), cliente.id(), Instant.now()));
 
-        assertThat(notificacoesCapturadas).hasSize(1);
-        assertThat(notificacoesCapturadas.get(0).assunto()).isEqualTo("Agendamento confirmado");
+        assertThat(notificacoesCapturadas).hasSize(2);
+        assertThat(notificacoesCapturadas).allSatisfy(n -> assertThat(n.assunto()).isEqualTo("Agendamento confirmado"));
     }
 
     @Test
@@ -86,8 +98,23 @@ class NotificacaoEventListenerTest {
         ResultadoCancelamento resultado = new ResultadoCancelamento(Dinheiro.ZERO, Dinheiro.de("30.00"));
         listener.aoCancelarAgendamento(new AgendamentoCancelado(AgendamentoId.novo(), cliente.id(), resultado, Instant.now()));
 
+        assertThat(notificacoesCapturadas).hasSize(2);
+        assertThat(notificacoesCapturadas).allSatisfy(n -> assertThat(n.assunto()).isEqualTo("Agendamento cancelado"));
+    }
+
+    @Test
+    void deveContinuarNoOutroCanalQuandoUmCanalFalha() {
+        clienteRepository.salvar(cliente);
+        NotificacaoDispatcher dispatcherComWhatsAppQuebrado = new NotificacaoDispatcher(List.of(
+                enviadorCapturador(CanalNotificacao.EMAIL)));
+        NotificacaoEventListener listenerComWhatsAppQuebrado =
+                new NotificacaoEventListener(clienteRepository, dispatcherComWhatsAppQuebrado);
+
+        listenerComWhatsAppQuebrado.aoCriarAgendamento(new AgendamentoCriado(AgendamentoId.novo(), PrestadorId.novo(),
+                cliente.id(), periodoExemplo(), Instant.now()));
+
         assertThat(notificacoesCapturadas).hasSize(1);
-        assertThat(notificacoesCapturadas.get(0).assunto()).isEqualTo("Agendamento cancelado");
+        assertThat(notificacoesCapturadas.get(0).canal()).isEqualTo(CanalNotificacao.EMAIL);
     }
 
     @Test
