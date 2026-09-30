@@ -5,6 +5,7 @@ import org.example.agendamento.application.port.in.ProcessarWebhookPagamentoUseC
 import org.example.agendamento.application.port.in.WebhookPagamentoCommand;
 import org.example.agendamento.config.AsaasProperties;
 import org.example.agendamento.domain.model.agendamento.AgendamentoId;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ import java.util.Set;
  */
 @RestController
 @RequestMapping("/api/webhooks/asaas")
+@ConditionalOnProperty(name = "pagamento.gateway", havingValue = "asaas", matchIfMissing = true)
 public class AsaasWebhookController {
 
     private static final Set<String> EVENTOS_DE_CONFIRMACAO = Set.of("PAYMENT_CONFIRMED", "PAYMENT_RECEIVED");

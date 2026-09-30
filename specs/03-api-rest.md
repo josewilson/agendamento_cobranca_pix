@@ -84,7 +84,32 @@ Webhook real do Asaas (https://docs.asaas.com/docs/webhook-para-cobrancas). Exec
 
 `pago = true` quando `event` é `PAYMENT_CONFIRMED` ou `PAYMENT_RECEIVED`; qualquer outro evento (`PAYMENT_OVERDUE`, `PAYMENT_DELETED`, etc.) chama o caso de uso com `pago = false`, que é um no-op. `externalReference` é o `agendamentoId` que nós mesmos enviamos ao criar a cobrança — não precisa de mapeamento à parte.
 
-**204 No Content** em qualquer evento com token válido. Este e o `/api/webhooks/pagamento` genérico acima são os únicos caminhos que confirmam um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
+**204 No Content** em qualquer evento com token válido.
+
+Só ativo quando `pagamento.gateway` está `asaas` (o padrão — `@ConditionalOnProperty(..., matchIfMissing = true)`).
+
+## `POST /api/webhooks/mercadopago`
+
+Webhook real do Mercado Pago (mercadopago.com.br/developers/.../notifications/webhooks). Executa `ProcessarWebhookPagamentoUseCase`. Só ativo quando `pagamento.gateway=mercadopago`.
+
+**Headers obrigatórios:** `x-signature` (formato `ts=<epoch-ms>,v1=<hmac-sha256-hex>`) e `x-request-id`. A assinatura é validada via HMAC-SHA256 sobre o manifesto `id:<data.id em minúsculas>;request-id:<x-request-id>;ts:<ts>;`, usando `mercadopago.webhook-secret` (`MERCADOPAGO_WEBHOOK_SECRET`) como chave. Assinatura ausente ou inválida → **403 Forbidden** sem processar nada.
+
+**Request** (payload real do Mercado Pago, `MercadoPagoWebhookRequest`):
+```json
+{
+  "type": "payment",
+  "action": "payment.updated",
+  "data": { "id": "123456789" }
+}
+```
+
+Diferente do Asaas, o corpo **não traz o status do pagamento** — só o id. O controller consulta de volta (`GET /v1/payments/{id}` via `MercadoPagoGatewayAdapter.consultarPagamento`) para saber o status e o `external_reference` (nosso `agendamentoId`). `pago = true` somente quando o status consultado é `approved`.
+
+**204 No Content** com assinatura válida.
+
+---
+
+`/api/webhooks/asaas`, `/api/webhooks/mercadopago` e o `/api/webhooks/pagamento` genérico acima são os únicos caminhos que confirmam um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
 
 ## Tratamento de erros (`GlobalExceptionHandler`)
 

@@ -6,6 +6,7 @@ import org.example.agendamento.config.AsaasProperties;
 import org.example.agendamento.domain.model.agendamento.AgendamentoId;
 import org.example.agendamento.domain.model.cliente.Cliente;
 import org.example.agendamento.domain.model.shared.Dinheiro;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,11 @@ import java.time.format.DateTimeFormatter;
  * Fluxo: cria/associa um cliente no Asaas, cria a cobranca vinculada a esse cliente
  * (com o proprio agendamentoId como externalReference, para o webhook conseguir
  * correlacionar sem precisarmos manter um mapeamento a parte), e busca o QR Code.
+ * Gateway padrao entre os dois disponiveis — ver pagamento.gateway e MercadoPagoGatewayAdapter.
  */
 @Component
 @Profile("!dev")
+@ConditionalOnProperty(name = "pagamento.gateway", havingValue = "asaas", matchIfMissing = true)
 public class AsaasGatewayAdapter implements GatewayDePagamento {
 
     private static final ZoneId ZONA_ASAAS = ZoneId.of("America/Sao_Paulo");

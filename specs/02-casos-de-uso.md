@@ -43,7 +43,12 @@ Sem comando (nenhum parâmetro do chamador — usa `Clock.agora()` internamente)
 
 Se `pagamentoConfirmado == true`, delega para `ConfirmarAgendamentoUseCase`. Se `false`, não faz nada — cobranças Pix não pagas expiram naturalmente via `ExpirarReservasPendentesUseCase`, não há um estado de "pagamento recusado" modelado.
 
-O `agendamentoId` chega diretamente no comando porque, ao gerar a cobrança Pix, o próprio `agendamentoId` é passado como `externalReference` ao gateway — o Asaas ecoa esse campo de volta no payload do webhook (`payment.externalReference`), então não é necessário manter um mapeamento separado referência-externa → agendamento. `AsaasWebhookController` (`adapter/in/web/`) é quem faz essa tradução do payload real do Asaas para `WebhookPagamentoCommand`; o `WebhookPagamentoController` genérico (`/api/webhooks/pagamento`, corpo `{agendamentoId, pago}`) continua existindo à parte, útil para testes manuais ou um futuro segundo gateway com payload diferente.
+O `agendamentoId` chega diretamente no comando porque, ao gerar a cobrança Pix, o próprio `agendamentoId` é passado como referência externa ao gateway (`externalReference` no Asaas e no Mercado Pago), então não é necessário manter um mapeamento separado referência-externa → agendamento. Cada gateway tem seu próprio controller traduzindo o payload real para `WebhookPagamentoCommand`:
+
+- `AsaasWebhookController` (`POST /api/webhooks/asaas`) — o payload do Asaas já traz o status (`payment.status`/`event`), confirma direto.
+- `MercadoPagoWebhookController` (`POST /api/webhooks/mercadopago`) — o payload do Mercado Pago só traz o id do pagamento (`data.id`), não o status; o controller consulta de volta via `MercadoPagoGatewayAdapter.consultarPagamento(id)` antes de decidir `pago`.
+
+Os dois controllers só ficam ativos quando o gateway correspondente está configurado (`@ConditionalOnProperty(name = "pagamento.gateway", ...)`, ver tabela de portas abaixo) — não faz sentido expor o webhook de um gateway que não está em uso. O `WebhookPagamentoController` genérico (`/api/webhooks/pagamento`, corpo `{agendamentoId, pago}`) continua existindo à parte, sempre ativo, útil para testes manuais.
 
 ## ConsultarAgendamentoUseCase
 
@@ -62,7 +67,7 @@ Para o listener reagir a um evento publicado via `PublicadorDeEventos`, a implem
 | Porta | Papel |
 |---|---|
 | `AgendamentoRepository`, `ClienteRepository`, `PrestadorRepository`, `ServicoRepository` | Persistência por agregado. Implementadas tanto em memória (`@Profile("dev")`) quanto via JPA/PostgreSQL (`@Profile("!dev")`). |
-| `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, cliente, valor) -> CobrancaPix`. `GatewayDePagamentoFake` (`@Profile("dev")`) ou `AsaasGatewayAdapter` (`@Profile("!dev")`, integra de verdade com a API do Asaas: cria cliente, cria cobrança Pix, busca o QR Code). Configuração em `asaas.*` (`application.yml`), chave lida de `ASAAS_API_KEY`. |
+| `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, cliente, valor) -> CobrancaPix`. Três implementações concorrentes, mutuamente exclusivas: `GatewayDePagamentoFake` (`@Profile("dev")`); `AsaasGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=asaas, matchIfMissing=true)` — é o padrão); `MercadoPagoGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=mercadopago)`). Trocar de gateway real é só setar `PAGAMENTO_GATEWAY=mercadopago` — nenhum código muda. Config em `asaas.*`/`mercadopago.*` (`application.yml`). |
 | `PublicadorDeEventos` | `publicar(EventoDeDominio)`. `PublicadorDeEventosEmMemoria` (`@Profile("dev")`) só acumula os eventos, útil em teste. `PublicadorDeEventosSpring` (`@Profile("!dev")`) delega ao `ApplicationEventPublisher` do Spring, permitindo que `NotificacaoEventListener` reaja de verdade (ver acima). |
 | `EnviadorDeNotificacao` | `enviar(Notificacao)` + `canalSuportado()`. `EnviadorDeNotificacaoFake` (`@Profile("dev")`, acumula em memória) ou `EmailEnviadorDeNotificacao` (`@Profile("!dev")`, envia via SMTP com `JavaMailSender`, config em `spring.mail.*`/`notificacao.email.remetente`). `NotificacaoDispatcher` (application/service, não é adapter) escolhe o enviador certo por `CanalNotificacao`. |
 | `Clock` | `agora() -> Instant`. Abstrai `Instant.now()` para permitir testes determinísticos de regras sensíveis a tempo (expiração, janela de cancelamento). |

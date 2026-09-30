@@ -23,10 +23,18 @@ spring:
           starttls:
             enable: ${SMTP_STARTTLS:false}
 
+pagamento:
+  gateway: ${PAGAMENTO_GATEWAY:asaas}
+
 asaas:
   base-url: https://api-sandbox.asaas.com/v3
   api-key: ${ASAAS_API_KEY:}
   webhook-token: ${ASAAS_WEBHOOK_TOKEN:}
+
+mercadopago:
+  base-url: https://api.mercadopago.com
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN:}
+  webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
 
 agendamento:
   expiracao:
