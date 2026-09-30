@@ -10,7 +10,7 @@ Implementados em `src/main/java/org/example/agendamento/application/`. Cada caso
 2. Busca agendamentos ativos do prestador e chama `VerificadorDeConflito.verificarDisponibilidade` — `ConflitoDeHorarioException` se houver sobreposição.
 3. Calcula o valor do sinal (regra 4 em `01-dominio.md`).
 4. Cria o agendamento via `Agendamento.criar(...)` usando `Clock.agora()` (nunca `Instant.now()` direto, para manter o caso de uso testável deterministicamente).
-5. Se exige sinal, chama `GatewayDePagamento.gerarCobrancaPix(agendamentoId, valorSinal)`.
+5. Se exige sinal, chama `GatewayDePagamento.gerarCobrancaPix(agendamentoId, cliente, valorSinal)` — o `Cliente` é necessário porque gateways reais (Asaas) exigem nome/documento/contato para criar o cliente do lado deles antes de emitir a cobrança.
 6. Persiste e publica `AgendamentoCriado`.
 
 **Retorno:** `ResultadoCriacaoAgendamento(agendamento, Optional<CobrancaPix>)`.
@@ -43,7 +43,7 @@ Sem comando (nenhum parâmetro do chamador — usa `Clock.agora()` internamente)
 
 Se `pagamentoConfirmado == true`, delega para `ConfirmarAgendamentoUseCase`. Se `false`, não faz nada — cobranças Pix não pagas expiram naturalmente via `ExpirarReservasPendentesUseCase`, não há um estado de "pagamento recusado" modelado.
 
-O `agendamentoId` chega diretamente no comando porque, ao gerar a cobrança Pix, o próprio `agendamentoId` é passado como referência externa ao gateway (`GatewayDePagamento.gerarCobrancaPix(agendamentoId, valor)`) — gateways reais (Asaas, Mercado Pago, Efí) permitem anexar uma referência própria à cobrança e a ecoam de volta no webhook, então não é necessário manter um mapeamento separado referência-externa → agendamento.
+O `agendamentoId` chega diretamente no comando porque, ao gerar a cobrança Pix, o próprio `agendamentoId` é passado como `externalReference` ao gateway — o Asaas ecoa esse campo de volta no payload do webhook (`payment.externalReference`), então não é necessário manter um mapeamento separado referência-externa → agendamento. `AsaasWebhookController` (`adapter/in/web/`) é quem faz essa tradução do payload real do Asaas para `WebhookPagamentoCommand`; o `WebhookPagamentoController` genérico (`/api/webhooks/pagamento`, corpo `{agendamentoId, pago}`) continua existindo à parte, útil para testes manuais ou um futuro segundo gateway com payload diferente.
 
 ## ConsultarAgendamentoUseCase
 
@@ -56,6 +56,6 @@ Busca o agendamento por ID — `RecursoNaoEncontradoException` se não existir. 
 | Porta | Papel |
 |---|---|
 | `AgendamentoRepository`, `ClienteRepository`, `PrestadorRepository`, `ServicoRepository` | Persistência por agregado. Implementadas tanto em memória (`@Profile("dev")`) quanto via JPA/PostgreSQL (`@Profile("!dev")`). |
-| `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, valor) -> CobrancaPix`. Só existe a implementação fake (`GatewayDePagamentoFake`) até a Fase 4. |
-| `PublicadorDeEventos` | `publicar(EventoDeDominio)`. Só existe a implementação em memória (`PublicadorDeEventosEmMemoria`), que apenas acumula os eventos publicados — não há consumidor real ainda (notificações/calendário ficam para a Fase 4). |
+| `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, cliente, valor) -> CobrancaPix`. `GatewayDePagamentoFake` (`@Profile("dev")`) ou `AsaasGatewayAdapter` (`@Profile("!dev")`, integra de verdade com a API do Asaas: cria cliente, cria cobrança Pix, busca o QR Code). Configuração em `asaas.*` (`application.yml`), chave lida de `ASAAS_API_KEY`. |
+| `PublicadorDeEventos` | `publicar(EventoDeDominio)`. Só existe a implementação em memória (`PublicadorDeEventosEmMemoria`), que apenas acumula os eventos publicados — não há consumidor real ainda (notificações/calendário ficam para mais adiante na Fase 4). |
 | `Clock` | `agora() -> Instant`. Abstrai `Instant.now()` para permitir testes determinísticos de regras sensíveis a tempo (expiração, janela de cancelamento). |

@@ -11,3 +11,8 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+
+asaas:
+  base-url: https://api-sandbox.asaas.com/v3
+  api-key: ${ASAAS_API_KEY:}
+  webhook-token: ${ASAAS_WEBHOOK_TOKEN:}

@@ -2,6 +2,7 @@ package org.example.agendamento;
 
 import org.example.agendamento.application.port.in.CancelarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.ConfirmarAgendamentoUseCase;
+import org.example.agendamento.application.port.in.ConsultarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.CriarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.ExpirarReservasPendentesUseCase;
 import org.example.agendamento.application.port.in.MarcarNoShowUseCase;
@@ -37,6 +38,8 @@ class AgendamentoApplicationTests {
     private ExpirarReservasPendentesUseCase expirarReservasPendentesUseCase;
     @Autowired
     private ProcessarWebhookPagamentoUseCase processarWebhookPagamentoUseCase;
+    @Autowired
+    private ConsultarAgendamentoUseCase consultarAgendamentoUseCase;
 
     @Test
     void contextLoadsComTodosOsCasosDeUsoEmMemoria() {
@@ -46,5 +49,6 @@ class AgendamentoApplicationTests {
         assertThat(marcarNoShowUseCase).isNotNull();
         assertThat(expirarReservasPendentesUseCase).isNotNull();
         assertThat(processarWebhookPagamentoUseCase).isNotNull();
+        assertThat(consultarAgendamentoUseCase).isNotNull();
     }
 }

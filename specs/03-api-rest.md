@@ -62,7 +62,29 @@ Callback de confirmação de pagamento. Executa `ProcessarWebhookPagamentoUseCas
 { "agendamentoId": "uuid", "pago": true }
 ```
 
-**204 No Content**. **400** se `agendamentoId` ausente. Este é o **único** caminho que confirma um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
+**204 No Content**. **400** se `agendamentoId` ausente. Endpoint genérico/manual — não é o que o Asaas realmente chama (ver abaixo).
+
+## `POST /api/webhooks/asaas`
+
+Webhook real do Asaas (https://docs.asaas.com/docs/webhook-para-cobrancas). Executa `ProcessarWebhookPagamentoUseCase`, traduzindo o payload nativo do Asaas.
+
+**Header obrigatório:** `asaas-access-token` — deve bater com `asaas.webhook-token` (`ASAAS_WEBHOOK_TOKEN`); caso contrário, **403 Forbidden** sem processar nada.
+
+**Request** (payload real do Asaas, `AsaasWebhookRequest`):
+```json
+{
+  "event": "PAYMENT_RECEIVED",
+  "payment": {
+    "id": "pay_080225913252",
+    "externalReference": "uuid-do-agendamento",
+    "status": "RECEIVED"
+  }
+}
+```
+
+`pago = true` quando `event` é `PAYMENT_CONFIRMED` ou `PAYMENT_RECEIVED`; qualquer outro evento (`PAYMENT_OVERDUE`, `PAYMENT_DELETED`, etc.) chama o caso de uso com `pago = false`, que é um no-op. `externalReference` é o `agendamentoId` que nós mesmos enviamos ao criar a cobrança — não precisa de mapeamento à parte.
+
+**204 No Content** em qualquer evento com token válido. Este e o `/api/webhooks/pagamento` genérico acima são os únicos caminhos que confirmam um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
 
 ## Tratamento de erros (`GlobalExceptionHandler`)
 
