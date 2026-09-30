@@ -50,9 +50,18 @@ google-calendar:
   credenciais-json: ${GOOGLE_CALENDAR_CREDENTIALS:}
   token-server-uri: ${GOOGLE_CALENDAR_TOKEN_SERVER_URI:https://oauth2.googleapis.com/token}
 
+twilio:
+  base-url: https://api.twilio.com/2010-04-01
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  sms-from: ${TWILIO_SMS_FROM:}
+  whatsapp-from: ${TWILIO_WHATSAPP_FROM:+14155238886}
+
 ---
-# Perfil dev: tudo em memoria (ver adapter/out/*/memory), entao nem Postgres nem Flyway
-# sao necessarios. Sem esta exclusao a aplicacao ainda tentaria abrir uma conexao JDBC no
+# Perfil dev: usado SÓ pelos testes (ver specs/04-roadmap.md) — nunca para rodar a aplicação
+# de verdade, que deve sempre usar o perfil padrão com Postgres real (docker-compose up -d).
+# Tudo em memória (ver adapter/out/*/memory), entao nem Postgres nem Flyway sao necessarios
+# nesse perfil. Sem esta exclusao a aplicacao ainda tentaria abrir uma conexao JDBC no
 # startup (HikariCP/Flyway rodam antes de qualquer bean de negocio), mesmo sem nenhum
 # repositorio JPA realmente em uso.
 spring:
