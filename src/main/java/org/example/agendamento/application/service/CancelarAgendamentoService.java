@@ -35,7 +35,7 @@ public class CancelarAgendamentoService implements CancelarAgendamentoUseCase {
         Instant agora = clock.agora();
         ResultadoCancelamento resultado = agendamento.cancelar(agora);
         agendamentoRepository.salvar(agendamento);
-        publicadorDeEventos.publicar(new AgendamentoCancelado(agendamento.id(), resultado, agora));
+        publicadorDeEventos.publicar(new AgendamentoCancelado(agendamento.id(), agendamento.clienteId(), resultado, agora));
 
         return resultado;
     }

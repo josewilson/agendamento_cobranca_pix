@@ -31,7 +31,7 @@ public class ConfirmarAgendamentoService implements ConfirmarAgendamentoUseCase 
 
         agendamento.confirmar();
         agendamentoRepository.salvar(agendamento);
-        publicadorDeEventos.publicar(new AgendamentoConfirmado(agendamento.id(), clock.agora()));
+        publicadorDeEventos.publicar(new AgendamentoConfirmado(agendamento.id(), agendamento.clienteId(), clock.agora()));
 
         return agendamento;
     }
