@@ -62,6 +62,12 @@ Não existe um `EnviarNotificacaoUseCase` — notificar o cliente é reação au
 
 Para o listener reagir a um evento publicado via `PublicadorDeEventos`, a implementação `!dev` (`PublicadorDeEventosSpring`) delega para o `ApplicationEventPublisher` do Spring — os eventos de domínio continuam sendo `record`s puros, só esse adapter conhece Spring. Por isso `AgendamentoConfirmado` e `AgendamentoCancelado` ganharam o campo `clienteId` (antes só tinham `agendamentoId`): o listener precisa dele para buscar o contato do cliente, e eventos de domínio devem carregar os dados que os consumidores precisam, não forçar uma releitura do agregado atual.
 
+## Sincronização com calendário externo (reação a eventos, não um caso de uso próprio)
+
+Mesmo padrão das notificações: `CalendarioEventListener` (`adapter/in/evento/`) reage a `AgendamentoConfirmado` (busca o `Agendamento`, `Servico` e `Cliente` para montar o evento externo e chama `CalendarioExternoPort.sincronizarEvento(agendamentoId, titulo, descricao, periodo)`) e a `AgendamentoCancelado` (`CalendarioExternoPort.removerEvento(agendamentoId)`). Propositalmente **não** reage a `AgendamentoCriado`: um agendamento `PENDENTE_PAGAMENTO` pode expirar sem nunca ter ocupado a agenda de verdade, então só vale a pena criar o evento externo quando o pagamento já foi confirmado. Falhas são logadas e nunca propagadas, mesmo motivo do `NotificacaoEventListener`.
+
+O id do evento no Google Calendar é derivado deterministicamente do `agendamentoId` (hex do UUID sem hífens — alfabeto compatível com o exigido pela API), então não é necessário manter um mapeamento à parte entre agendamento e evento externo.
+
 ## Portas de saída usadas pelos casos de uso
 
 | Porta | Papel |
@@ -70,4 +76,5 @@ Para o listener reagir a um evento publicado via `PublicadorDeEventos`, a implem
 | `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, cliente, valor) -> CobrancaPix`. Três implementações concorrentes, mutuamente exclusivas: `GatewayDePagamentoFake` (`@Profile("dev")`); `AsaasGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=asaas, matchIfMissing=true)` — é o padrão); `MercadoPagoGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=mercadopago)`). Trocar de gateway real é só setar `PAGAMENTO_GATEWAY=mercadopago` — nenhum código muda. Config em `asaas.*`/`mercadopago.*` (`application.yml`). |
 | `PublicadorDeEventos` | `publicar(EventoDeDominio)`. `PublicadorDeEventosEmMemoria` (`@Profile("dev")`) só acumula os eventos, útil em teste. `PublicadorDeEventosSpring` (`@Profile("!dev")`) delega ao `ApplicationEventPublisher` do Spring, permitindo que `NotificacaoEventListener` reaja de verdade (ver acima). |
 | `EnviadorDeNotificacao` | `enviar(Notificacao)` + `canalSuportado()`. `EnviadorDeNotificacaoFake` (`@Profile("dev")`, acumula em memória) ou `EmailEnviadorDeNotificacao` (`@Profile("!dev")`, envia via SMTP com `JavaMailSender`, config em `spring.mail.*`/`notificacao.email.remetente`). `NotificacaoDispatcher` (application/service, não é adapter) escolhe o enviador certo por `CanalNotificacao`. |
+| `CalendarioExternoPort` | `sincronizarEvento(agendamentoId, titulo, descricao, periodo)` + `removerEvento(agendamentoId)`. `CalendarioExternoFake` (`@Profile("dev")`, acumula em memória) ou `GoogleCalendarAdapter` (`@Profile("!dev")`, integra com a API real do Google Calendar via conta de serviço — integração de saída pura, sem endpoint REST próprio). Config em `google-calendar.*`. |
 | `Clock` | `agora() -> Instant`. Abstrai `Instant.now()` para permitir testes determinísticos de regras sensíveis a tempo (expiração, janela de cancelamento). |

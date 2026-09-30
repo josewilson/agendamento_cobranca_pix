@@ -2,6 +2,8 @@
 
 Implementada em `src/main/java/org/example/agendamento/adapter/in/web/`. Base path: `/api`.
 
+Documentação interativa via `springdoc-openapi-starter-webmvc-ui` em `/swagger-ui.html` (`/v3/api-docs` para o JSON cru) — permite testar todos os endpoints direto do navegador. Com o perfil `dev` ativo, `DevDataSeeder` (`adapter/in/seed/`) popula um prestador, cliente e serviço de IDs fixos no startup (logados no console), o suficiente para testar `POST /api/agendamentos` pelo Swagger sem precisar de endpoints de cadastro (fora do escopo deste projeto).
+
 ## `POST /api/agendamentos`
 
 Cria um agendamento. Executa `CriarAgendamentoUseCase`.

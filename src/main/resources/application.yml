@@ -43,3 +43,25 @@ agendamento:
 notificacao:
   email:
     remetente: ${EMAIL_REMETENTE:no-reply@agendamento.local}
+
+google-calendar:
+  base-url: https://www.googleapis.com/calendar/v3
+  calendar-id: ${GOOGLE_CALENDAR_ID:primary}
+  credenciais-json: ${GOOGLE_CALENDAR_CREDENTIALS:}
+  token-server-uri: ${GOOGLE_CALENDAR_TOKEN_SERVER_URI:https://oauth2.googleapis.com/token}
+
+---
+# Perfil dev: tudo em memoria (ver adapter/out/*/memory), entao nem Postgres nem Flyway
+# sao necessarios. Sem esta exclusao a aplicacao ainda tentaria abrir uma conexao JDBC no
+# startup (HikariCP/Flyway rodam antes de qualquer bean de negocio), mesmo sem nenhum
+# repositorio JPA realmente em uso.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
