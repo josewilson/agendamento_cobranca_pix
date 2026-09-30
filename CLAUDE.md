@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Before starting work
+
+Read `specs/` (`00-visao-geral.md` through `04-roadmap.md`) at the start of every session in this repo, alongside this file — they are the source of truth for functional requirements, domain rules, the REST contract, and what's done vs. pending. If a change in this session contradicts or extends something documented there, update the relevant spec file in the same change so specs and code never drift apart.
+
 ## Project
 
 Agendamento com cobrança via Pix — a scheduling platform for service providers (clinics, barbershops, studios) with Pix deposit/cancellation-fee billing. Hexagonal-architecture portfolio project in Java 21 + Spring Boot 3.5.11.
