@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: agendamento-com-cobranca-pix
+  datasource:
+    url: jdbc:postgresql://localhost:5432/agendamento
+    username: agendamento
+    password: agendamento
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true

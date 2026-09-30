@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agendamento-postgres
+    environment:
+      POSTGRES_DB: agendamento
+      POSTGRES_USER: agendamento
+      POSTGRES_PASSWORD: agendamento
+    ports:
+      - "5432:5432"
+    volumes:
+      - agendamento-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  agendamento-postgres-data:
