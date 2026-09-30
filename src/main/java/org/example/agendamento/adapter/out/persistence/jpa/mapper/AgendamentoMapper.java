@@ -32,6 +32,7 @@ public final class AgendamentoMapper {
         entity.setPoliticaPercentualRetido(agendamento.politicaAplicada().percentualRetido());
         entity.setStatus(agendamento.status().name());
         entity.setCriadoEm(agendamento.criadoEm());
+        entity.setReferenciaPagamento(agendamento.referenciaPagamento().orElse(null));
         return entity;
     }
 
@@ -50,6 +51,7 @@ public final class AgendamentoMapper {
                 Dinheiro.de(entity.getValorSinal()),
                 politica,
                 entity.getCriadoEm(),
-                StatusAgendamento.valueOf(entity.getStatus()));
+                StatusAgendamento.valueOf(entity.getStatus()),
+                entity.getReferenciaPagamento());
     }
 }

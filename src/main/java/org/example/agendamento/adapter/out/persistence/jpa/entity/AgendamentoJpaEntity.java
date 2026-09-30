@@ -49,6 +49,9 @@ public class AgendamentoJpaEntity {
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
+    @Column(name = "referencia_pagamento")
+    private String referenciaPagamento;
+
     public AgendamentoJpaEntity() {
     }
 
@@ -91,4 +94,7 @@ public class AgendamentoJpaEntity {
 
     public Instant getCriadoEm() { return criadoEm; }
     public void setCriadoEm(Instant criadoEm) { this.criadoEm = criadoEm; }
+
+    public String getReferenciaPagamento() { return referenciaPagamento; }
+    public void setReferenciaPagamento(String referenciaPagamento) { this.referenciaPagamento = referenciaPagamento; }
 }

@@ -74,7 +74,9 @@ public class CriarAgendamentoService implements CriarAgendamentoUseCase {
 
         Optional<CobrancaPix> cobranca = Optional.empty();
         if (exigeSinal) {
-            cobranca = Optional.of(gatewayDePagamento.gerarCobrancaPix(agendamento.id(), cliente, valorSinal));
+            CobrancaPix cobrancaPix = gatewayDePagamento.gerarCobrancaPix(agendamento.id(), cliente, valorSinal);
+            agendamento.vincularReferenciaPagamento(cobrancaPix.referenciaExterna());
+            cobranca = Optional.of(cobrancaPix);
         }
 
         agendamentoRepository.salvar(agendamento);

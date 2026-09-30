@@ -60,6 +60,16 @@ public class AsaasGatewayAdapter implements GatewayDePagamento {
         return buscarQrCode(pagamentoId);
     }
 
+    @Override
+    public void estornar(String referenciaExterna, Dinheiro valor) {
+        AsaasRefundRequest request = new AsaasRefundRequest(valor.valor(), "Cancelamento de agendamento");
+        restClient.post()
+                .uri("/payments/{id}/refund", referenciaExterna)
+                .body(request)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
     private String criarCliente(Cliente cliente) {
         AsaasCustomerRequest request = new AsaasCustomerRequest(
                 cliente.nome(),
@@ -122,5 +132,8 @@ public class AsaasGatewayAdapter implements GatewayDePagamento {
     }
 
     private record AsaasPixQrCodeResponse(String encodedImage, String payload, String expirationDate) {
+    }
+
+    private record AsaasRefundRequest(BigDecimal value, String description) {
     }
 }

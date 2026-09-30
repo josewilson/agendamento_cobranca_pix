@@ -208,7 +208,7 @@ class AgendamentoTest {
         Agendamento agendamento = Agendamento.reconstituir(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
                 ServicoId.novo(), periodoNoPassado, Dinheiro.de("100.00"), Dinheiro.de("30.00"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)),
-                criadoEmNoPassadoDistante, StatusAgendamento.CONCLUIDO);
+                criadoEmNoPassadoDistante, StatusAgendamento.CONCLUIDO, null);
 
         assertThat(agendamento.status()).isEqualTo(StatusAgendamento.CONCLUIDO);
         assertThat(agendamento.periodo()).isEqualTo(periodoNoPassado);

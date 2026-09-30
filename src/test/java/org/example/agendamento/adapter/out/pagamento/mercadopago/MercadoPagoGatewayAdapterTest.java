@@ -16,8 +16,10 @@ import org.springframework.web.client.RestClient;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -84,5 +86,19 @@ class MercadoPagoGatewayAdapterTest {
 
         assertThat(status.status()).isEqualTo("approved");
         assertThat(status.externalReference()).isEqualTo("11111111-1111-1111-1111-111111111111");
+    }
+
+    @Test
+    void deveEstornarPagamentoComValorInformado() {
+        wireMock.stubFor(post(urlEqualTo("/v1/payments/123456789/refunds"))
+                .withHeader("Authorization", equalTo("Bearer TEST-token"))
+                .withHeader("X-Idempotency-Key", matching(".+"))
+                .withRequestBody(matchingJsonPath("$[?(@.amount == 30.00)]"))
+                .willReturn(aResponse().withStatus(201).withHeader("Content-Type", "application/json")
+                        .withBody("{\"id\":1,\"status\":\"approved\"}")));
+
+        adapter().estornar("123456789", Dinheiro.de("30.00"));
+
+        wireMock.verify(postRequestedFor(urlEqualTo("/v1/payments/123456789/refunds")));
     }
 }

@@ -11,6 +11,7 @@ import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 public class Agendamento {
 
@@ -24,10 +25,12 @@ public class Agendamento {
     private final PoliticaCancelamento politicaAplicada;
     private final Instant criadoEm;
     private StatusAgendamento status;
+    private String referenciaPagamento;
 
     private Agendamento(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId, ServicoId servicoId,
                          Periodo periodo, Dinheiro valorServico, Dinheiro valorSinal,
-                         PoliticaCancelamento politicaAplicada, Instant criadoEm, StatusAgendamento status) {
+                         PoliticaCancelamento politicaAplicada, Instant criadoEm, StatusAgendamento status,
+                         String referenciaPagamento) {
         this.id = id;
         this.prestadorId = prestadorId;
         this.clienteId = clienteId;
@@ -38,6 +41,7 @@ public class Agendamento {
         this.politicaAplicada = politicaAplicada;
         this.criadoEm = criadoEm;
         this.status = status;
+        this.referenciaPagamento = referenciaPagamento;
     }
 
     public static Agendamento criar(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId,
@@ -59,7 +63,7 @@ public class Agendamento {
                 ? StatusAgendamento.PENDENTE_PAGAMENTO
                 : StatusAgendamento.CONFIRMADO;
         return new Agendamento(id, prestadorId, clienteId, servicoId, periodo, valorServico, valorSinal,
-                politicaAplicada, agora, statusInicial);
+                politicaAplicada, agora, statusInicial, null);
     }
 
     /**
@@ -70,7 +74,7 @@ public class Agendamento {
     public static Agendamento reconstituir(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId,
                                             ServicoId servicoId, Periodo periodo, Dinheiro valorServico,
                                             Dinheiro valorSinal, PoliticaCancelamento politicaAplicada,
-                                            Instant criadoEm, StatusAgendamento status) {
+                                            Instant criadoEm, StatusAgendamento status, String referenciaPagamento) {
         Objects.requireNonNull(id, "id nao pode ser nulo");
         Objects.requireNonNull(prestadorId, "prestadorId nao pode ser nulo");
         Objects.requireNonNull(clienteId, "clienteId nao pode ser nulo");
@@ -82,7 +86,21 @@ public class Agendamento {
         Objects.requireNonNull(criadoEm, "criadoEm nao pode ser nulo");
         Objects.requireNonNull(status, "status nao pode ser nulo");
         return new Agendamento(id, prestadorId, clienteId, servicoId, periodo, valorServico, valorSinal,
-                politicaAplicada, criadoEm, status);
+                politicaAplicada, criadoEm, status, referenciaPagamento);
+    }
+
+    /**
+     * Vincula a referencia externa da cobranca Pix gerada no gateway de pagamento — necessaria
+     * mais tarde para executar o estorno no cancelamento. So chamado quando o agendamento exige
+     * sinal (ver CriarAgendamentoService); sem sinal, nunca ha o que estornar.
+     */
+    public void vincularReferenciaPagamento(String referenciaPagamento) {
+        Objects.requireNonNull(referenciaPagamento, "referenciaPagamento nao pode ser nula");
+        this.referenciaPagamento = referenciaPagamento;
+    }
+
+    public Optional<String> referenciaPagamento() {
+        return Optional.ofNullable(referenciaPagamento);
     }
 
     public void confirmar() {

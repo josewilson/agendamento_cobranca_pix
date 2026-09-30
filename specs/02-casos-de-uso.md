@@ -10,7 +10,7 @@ Implementados em `src/main/java/org/example/agendamento/application/`. Cada caso
 2. Busca agendamentos ativos do prestador e chama `VerificadorDeConflito.verificarDisponibilidade` — `ConflitoDeHorarioException` se houver sobreposição.
 3. Calcula o valor do sinal (regra 4 em `01-dominio.md`).
 4. Cria o agendamento via `Agendamento.criar(...)` usando `Clock.agora()` (nunca `Instant.now()` direto, para manter o caso de uso testável deterministicamente).
-5. Se exige sinal, chama `GatewayDePagamento.gerarCobrancaPix(agendamentoId, cliente, valorSinal)` — o `Cliente` é necessário porque gateways reais (Asaas) exigem nome/documento/contato para criar o cliente do lado deles antes de emitir a cobrança.
+5. Se exige sinal, chama `GatewayDePagamento.gerarCobrancaPix(agendamentoId, cliente, valorSinal)` — o `Cliente` é necessário porque gateways reais (Asaas) exigem nome/documento/contato para criar o cliente do lado deles antes de emitir a cobrança — e vincula a `referenciaExterna` retornada ao agendamento (`Agendamento.vincularReferenciaPagamento`), necessária mais tarde para o estorno no cancelamento.
 6. Persiste e publica `AgendamentoCriado`.
 
 **Retorno:** `ResultadoCriacaoAgendamento(agendamento, Optional<CobrancaPix>)`.
@@ -25,7 +25,7 @@ Busca o agendamento, chama `agendamento.confirmar()`, persiste, publica `Agendam
 
 **Comando:** `CancelarAgendamentoCommand(agendamentoId)`
 
-Busca o agendamento, chama `agendamento.cancelar(clock.agora())`, persiste, publica `AgendamentoCancelado(agendamentoId, clienteId, resultado, ocorridoEm)`. Retorna o `ResultadoCancelamento` (valor retido/reembolsado) para o chamador decidir a ação de reembolso — a Fase 2/3 não integra ainda com um gateway real para executar o reembolso automaticamente (ver `04-roadmap.md`).
+Busca o agendamento, chama `agendamento.cancelar(clock.agora())`, persiste, publica `AgendamentoCancelado(agendamentoId, clienteId, resultado, ocorridoEm)`. Retorna o `ResultadoCancelamento` (valor retido/reembolsado) para o chamador. O próprio `CancelarAgendamentoUseCase` não executa o estorno — quem faz isso é `EstornoEventListener` (ver "Estorno" abaixo), reagindo ao evento publicado, no mesmo espírito de notificações e sincronização de calendário: o cancelamento em si nunca deve falhar por causa de um efeito colateral externo.
 
 ## MarcarNoShowUseCase
 
@@ -70,12 +70,18 @@ Mesmo padrão das notificações: `CalendarioEventListener` (`adapter/in/evento/
 
 O id do evento no Google Calendar é derivado deterministicamente do `agendamentoId` (hex do UUID sem hífens — alfabeto compatível com o exigido pela API), então não é necessário manter um mapeamento à parte entre agendamento e evento externo.
 
+## Estorno no cancelamento (reação a evento, não um caso de uso próprio)
+
+Mesmo padrão de novo: `EstornoEventListener` (`adapter/in/evento/`) reage a `AgendamentoCancelado`. Só age quando `resultado.valorReembolsado()` é maior que zero — sem isso não há o que estornar (cancelamento dentro da janela livre e sem sinal, por exemplo). Busca o `Agendamento` pelo `agendamentoId` do evento e usa `Agendamento.referenciaPagamento()` (a referência externa vinculada por `CriarAgendamentoUseCase` quando a cobrança foi gerada) para chamar `GatewayDePagamento.estornar(referencia, valorReembolsado)`. Se o agendamento nunca teve sinal (`referenciaPagamento()` vazio), não faz nada. Falhas são logadas e nunca propagadas — mesmo motivo dos outros listeners: o cancelamento já foi persistido, um estorno que falha na API do gateway não pode desfazer isso (fica como um estorno pendente a ser reprocessado manualmente; não há retry automático nesta fase).
+
+`Agendamento` ganhou o campo `referenciaPagamento` (nullable — só preenchido quando há sinal) e o método `vincularReferenciaPagamento(String)`, chamado uma única vez por `CriarAgendamentoService` logo após `gerarCobrancaPix`. Persistido na coluna `referencia_pagamento` (migration `V5`).
+
 ## Portas de saída usadas pelos casos de uso
 
 | Porta | Papel |
 |---|---|
 | `AgendamentoRepository`, `ClienteRepository`, `PrestadorRepository`, `ServicoRepository` | Persistência por agregado. Implementadas tanto em memória (`@Profile("dev")`) quanto via JPA/PostgreSQL (`@Profile("!dev")`). |
-| `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, cliente, valor) -> CobrancaPix`. Três implementações concorrentes, mutuamente exclusivas: `GatewayDePagamentoFake` (`@Profile("dev")`); `AsaasGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=asaas, matchIfMissing=true)` — é o padrão); `MercadoPagoGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=mercadopago)`). Trocar de gateway real é só setar `PAGAMENTO_GATEWAY=mercadopago` — nenhum código muda. Config em `asaas.*`/`mercadopago.*` (`application.yml`). |
+| `GatewayDePagamento` | `gerarCobrancaPix(agendamentoId, cliente, valor) -> CobrancaPix` + `estornar(referenciaExterna, valor)`. Três implementações concorrentes, mutuamente exclusivas: `GatewayDePagamentoFake` (`@Profile("dev")`); `AsaasGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=asaas, matchIfMissing=true)` — é o padrão, `estornar` chama `POST /payments/{id}/refund`); `MercadoPagoGatewayAdapter` (`@Profile("!dev")` + `@ConditionalOnProperty(pagamento.gateway=mercadopago)`, `estornar` chama `POST /v1/payments/{id}/refunds` com `X-Idempotency-Key`, mesmo padrão usado em `gerarCobrancaPix`). Trocar de gateway real é só setar `PAGAMENTO_GATEWAY=mercadopago` — nenhum código muda. Config em `asaas.*`/`mercadopago.*` (`application.yml`). |
 | `PublicadorDeEventos` | `publicar(EventoDeDominio)`. `PublicadorDeEventosEmMemoria` (`@Profile("dev")`) só acumula os eventos, útil em teste. `PublicadorDeEventosSpring` (`@Profile("!dev")`) delega ao `ApplicationEventPublisher` do Spring, permitindo que `NotificacaoEventListener` reaja de verdade (ver acima). |
 | `EnviadorDeNotificacao` | `enviar(Notificacao)` + `canalSuportado()`. Em `dev`, `EnviadorDeNotificacaoFake` (um único bean acumulando qualquer canal, só para teste). Em `!dev`, três adapters reais — um por canal: `EmailEnviadorDeNotificacao` (SMTP via `JavaMailSender`, config em `spring.mail.*`/`notificacao.email.remetente`), `TwilioSmsEnviadorDeNotificacao` e `TwilioWhatsAppEnviadorDeNotificacao` (Twilio Messages API, config em `twilio.*`, compartilham `AbstractTwilioEnviadorDeNotificacao` — mesma chamada HTTP, só muda o prefixo `whatsapp:` nos números). `NotificacaoDispatcher` (application/service, não é adapter) injeta `List<EnviadorDeNotificacao>` e escolhe o enviador certo por `CanalNotificacao` — registrar um canal novo é só adicionar mais um `@Component`, o dispatcher não muda. |
 | `CalendarioExternoPort` | `sincronizarEvento(agendamentoId, titulo, descricao, periodo)` + `removerEvento(agendamentoId)`. `CalendarioExternoFake` (`@Profile("dev")`, acumula em memória) ou `GoogleCalendarAdapter` (`@Profile("!dev")`, integra com a API real do Google Calendar via conta de serviço — integração de saída pura, sem endpoint REST próprio). Config em `google-calendar.*`. |

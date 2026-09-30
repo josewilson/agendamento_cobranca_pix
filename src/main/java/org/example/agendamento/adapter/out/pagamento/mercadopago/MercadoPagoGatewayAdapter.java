@@ -82,6 +82,17 @@ public class MercadoPagoGatewayAdapter implements GatewayDePagamento {
         return new CobrancaPix(String.valueOf(response.id()), dados.qrCodeBase64(), dados.qrCode(), expiraEm);
     }
 
+    @Override
+    public void estornar(String referenciaExterna, Dinheiro valor) {
+        RefundRequest request = new RefundRequest(valor.valor());
+        restClient.post()
+                .uri("/v1/payments/{id}/refunds", referenciaExterna)
+                .header("X-Idempotency-Key", UUID.randomUUID().toString())
+                .body(request)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
     /** Usado por MercadoPagoWebhookController: o webhook so traz o id do pagamento, nao o status. */
     public StatusConsultado consultarPagamento(String idPagamento) {
         PagamentoResponse response = restClient.get()
@@ -125,5 +136,8 @@ public class MercadoPagoGatewayAdapter implements GatewayDePagamento {
 
     private record TransactionData(@JsonProperty("qr_code") String qrCode,
                                     @JsonProperty("qr_code_base64") String qrCodeBase64) {
+    }
+
+    private record RefundRequest(BigDecimal amount) {
     }
 }

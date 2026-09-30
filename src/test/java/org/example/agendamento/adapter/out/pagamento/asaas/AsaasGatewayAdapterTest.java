@@ -18,6 +18,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,5 +63,18 @@ class AsaasGatewayAdapterTest {
         assertThat(cobranca.referenciaExterna()).isEqualTo("pay_456");
         assertThat(cobranca.qrCode()).isEqualTo("BASE64IMG");
         assertThat(cobranca.copiaECola()).isEqualTo("00020126COPIAECOLA");
+    }
+
+    @Test
+    void deveEstornarPagamentoComValorInformado() {
+        wireMock.stubFor(post(urlEqualTo("/payments/pay_456/refund"))
+                .withHeader("access_token", equalTo("test-api-key"))
+                .withRequestBody(matchingJsonPath("$[?(@.value == 30.00)]"))
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\"status\":\"REFUNDED\"}")));
+
+        adapter().estornar("pay_456", Dinheiro.de("30.00"));
+
+        wireMock.verify(postRequestedFor(urlEqualTo("/payments/pay_456/refund")));
     }
 }

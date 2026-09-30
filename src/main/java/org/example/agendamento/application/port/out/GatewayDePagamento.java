@@ -7,4 +7,6 @@ import org.example.agendamento.domain.model.shared.Dinheiro;
 public interface GatewayDePagamento {
 
     CobrancaPix gerarCobrancaPix(AgendamentoId agendamentoId, Cliente cliente, Dinheiro valor);
+
+    void estornar(String referenciaExterna, Dinheiro valor);
 }

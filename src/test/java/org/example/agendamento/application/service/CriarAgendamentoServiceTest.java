@@ -103,6 +103,8 @@ class CriarAgendamentoServiceTest {
         assertThat(resultado.agendamento().status()).isEqualTo(StatusAgendamento.PENDENTE_PAGAMENTO);
         assertThat(resultado.agendamento().valorSinal()).isEqualTo(Dinheiro.de("30.00"));
         assertThat(resultado.cobranca()).isPresent();
+        assertThat(resultado.agendamento().referenciaPagamento())
+                .contains(resultado.cobranca().orElseThrow().referenciaExterna());
     }
 
     @Test
