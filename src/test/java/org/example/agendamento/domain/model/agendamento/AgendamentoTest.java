@@ -1,6 +1,9 @@
 package org.example.agendamento.domain.model.agendamento;
 
 import org.example.agendamento.domain.exception.TransicaoDeStatusInvalidaException;
+import org.example.agendamento.domain.model.cliente.ClienteId;
+import org.example.agendamento.domain.model.prestador.PrestadorId;
+import org.example.agendamento.domain.model.servico.ServicoId;
 import org.example.agendamento.domain.model.shared.Dinheiro;
 import org.example.agendamento.domain.model.shared.Periodo;
 import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
@@ -194,5 +197,20 @@ class AgendamentoTest {
 
         assertThatThrownBy(() -> agendamento.cancelar(agendamento.criadoEm()))
                 .isInstanceOf(TransicaoDeStatusInvalidaException.class);
+    }
+
+    @Test
+    void deveReconstituirAgendamentoComStatusArbitrarioSemRevalidarRegrasDeCriacao() {
+        Instant criadoEmNoPassadoDistante = Instant.parse("2020-01-01T10:00:00Z");
+        Periodo periodoNoPassado = new Periodo(criadoEmNoPassadoDistante.plus(Duration.ofDays(1)),
+                criadoEmNoPassadoDistante.plus(Duration.ofDays(1)).plus(Duration.ofHours(1)));
+
+        Agendamento agendamento = Agendamento.reconstituir(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
+                ServicoId.novo(), periodoNoPassado, Dinheiro.de("100.00"), Dinheiro.de("30.00"),
+                new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)),
+                criadoEmNoPassadoDistante, StatusAgendamento.CONCLUIDO);
+
+        assertThat(agendamento.status()).isEqualTo(StatusAgendamento.CONCLUIDO);
+        assertThat(agendamento.periodo()).isEqualTo(periodoNoPassado);
     }
 }

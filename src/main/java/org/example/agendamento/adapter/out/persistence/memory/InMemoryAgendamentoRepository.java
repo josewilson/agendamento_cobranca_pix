@@ -5,6 +5,7 @@ import org.example.agendamento.domain.model.agendamento.Agendamento;
 import org.example.agendamento.domain.model.agendamento.AgendamentoId;
 import org.example.agendamento.domain.model.agendamento.StatusAgendamento;
 import org.example.agendamento.domain.model.prestador.PrestadorId;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
+@Profile("dev")
 public class InMemoryAgendamentoRepository implements AgendamentoRepository {
 
     private static final Set<StatusAgendamento> STATUS_ATIVOS =

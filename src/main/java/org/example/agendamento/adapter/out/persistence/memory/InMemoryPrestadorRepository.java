@@ -3,6 +3,7 @@ package org.example.agendamento.adapter.out.persistence.memory;
 import org.example.agendamento.application.port.out.PrestadorRepository;
 import org.example.agendamento.domain.model.prestador.Prestador;
 import org.example.agendamento.domain.model.prestador.PrestadorId;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
+@Profile("dev")
 public class InMemoryPrestadorRepository implements PrestadorRepository {
 
     private final Map<PrestadorId, Prestador> prestadores = new ConcurrentHashMap<>();

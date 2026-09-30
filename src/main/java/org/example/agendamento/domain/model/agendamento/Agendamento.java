@@ -62,6 +62,29 @@ public class Agendamento {
                 politicaAplicada, agora, statusInicial);
     }
 
+    /**
+     * Reconstitui um agendamento a partir de dados ja persistidos, sem reaplicar as regras de criacao
+     * (por exemplo, um agendamento concluido no passado nao pode falhar a validacao de "periodo no passado").
+     * Uso exclusivo de adapters de persistencia.
+     */
+    public static Agendamento reconstituir(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId,
+                                            ServicoId servicoId, Periodo periodo, Dinheiro valorServico,
+                                            Dinheiro valorSinal, PoliticaCancelamento politicaAplicada,
+                                            Instant criadoEm, StatusAgendamento status) {
+        Objects.requireNonNull(id, "id nao pode ser nulo");
+        Objects.requireNonNull(prestadorId, "prestadorId nao pode ser nulo");
+        Objects.requireNonNull(clienteId, "clienteId nao pode ser nulo");
+        Objects.requireNonNull(servicoId, "servicoId nao pode ser nulo");
+        Objects.requireNonNull(periodo, "periodo nao pode ser nulo");
+        Objects.requireNonNull(valorServico, "valorServico nao pode ser nulo");
+        Objects.requireNonNull(valorSinal, "valorSinal nao pode ser nulo");
+        Objects.requireNonNull(politicaAplicada, "politicaAplicada nao pode ser nula");
+        Objects.requireNonNull(criadoEm, "criadoEm nao pode ser nulo");
+        Objects.requireNonNull(status, "status nao pode ser nulo");
+        return new Agendamento(id, prestadorId, clienteId, servicoId, periodo, valorServico, valorSinal,
+                politicaAplicada, criadoEm, status);
+    }
+
     public void confirmar() {
         transicionarPara(StatusAgendamento.CONFIRMADO);
     }
