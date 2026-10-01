@@ -24,9 +24,10 @@ import java.time.Duration;
 
 /**
  * Popula os repositorios em memoria do perfil dev com um prestador, um cliente e um
- * servico de IDs fixos, so para permitir demonstrar POST /api/agendamentos pelo Swagger UI
- * sem precisar de endpoints de cadastro (que nao fazem parte do escopo deste projeto —
- * prestador/cliente/servico sao considerados dados ja existentes vindos de outro sistema).
+ * servico de IDs fixos, so para dar um atalho rapido de dados prontos (Swagger UI, testes)
+ * sem precisar passar pelos endpoints de cadastro (POST /api/prestadores, /api/clientes,
+ * /api/servicos) toda vez. Esses endpoints existem e sao o caminho real de cadastro — este
+ * seeder e so conveniencia para o perfil dev, nunca a unica forma de ter dados.
  */
 @Component
 @Profile("dev")

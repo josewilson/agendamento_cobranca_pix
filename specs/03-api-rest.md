@@ -2,7 +2,64 @@
 
 Implementada em `src/main/java/org/example/agendamento/adapter/in/web/`. Base path: `/api`.
 
-Documentação interativa via `springdoc-openapi-starter-webmvc-ui` em `/swagger-ui.html` (`/v3/api-docs` para o JSON cru) — permite testar todos os endpoints direto do navegador. Com o perfil `dev` ativo, `DevDataSeeder` (`adapter/in/seed/`) popula um prestador, cliente e serviço de IDs fixos no startup (logados no console), o suficiente para testar `POST /api/agendamentos` pelo Swagger sem precisar de endpoints de cadastro (fora do escopo deste projeto).
+Documentação interativa via `springdoc-openapi-starter-webmvc-ui` em `/swagger-ui.html` (`/v3/api-docs` para o JSON cru) — permite testar todos os endpoints direto do navegador. Com o perfil `dev` ativo, `DevDataSeeder` (`adapter/in/seed/`) popula um prestador, cliente e serviço de IDs fixos no startup (logados no console), um atalho rápido além dos endpoints de cadastro abaixo.
+
+**CORS**: liberado para `app.cors.allowed-origins` (`WebConfig`, `adapter/in/web/`), por padrão só `http://localhost:5173` (o frontend separado em `frontend/`, ver `CLAUDE.md`). Sem isso o browser bloqueia as chamadas antes de chegarem aos controllers.
+
+## `POST /api/prestadores`
+
+Cadastra um prestador. Executa `CadastrarPrestadorUseCase`. Política de cancelamento sempre `PoliticaCancelamento.padrao()` (não configurável via API ainda).
+
+**Request** (`CadastrarPrestadorRequest`, todos `@NotBlank`):
+```json
+{ "nome": "Clinica Bem-Estar", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
+```
+`documentoTipo` é `"CPF"` ou `"CNPJ"`.
+
+**201 Created** (`PrestadorResponse`):
+```json
+{ "id": "uuid", "nome": "Clinica Bem-Estar", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
+```
+**400** se nome vazio ou documento com dígito verificador inválido (validação do próprio `DocumentoFiscal`).
+
+## `GET /api/prestadores`
+
+Lista todos os prestadores cadastrados. Executa `ListarPrestadoresUseCase`. **200 OK**, array de `PrestadorResponse`.
+
+## `POST /api/clientes`
+
+Cadastra um cliente. Executa `CadastrarClienteUseCase`.
+
+**Request** (`CadastrarClienteRequest`, todos `@NotBlank`):
+```json
+{ "nome": "Maria Silva", "email": "maria@exemplo.com", "telefone": "11987654321", "documentoNumero": "52998224725", "documentoTipo": "CPF" }
+```
+
+**201 Created** (`ClienteResponse`, inclui `quantidadeNoShow` sempre `0` para um cliente novo):
+```json
+{ "id": "uuid", "nome": "Maria Silva", "email": "maria@exemplo.com", "telefone": "11987654321",
+  "documentoNumero": "52998224725", "documentoTipo": "CPF", "quantidadeNoShow": 0 }
+```
+**400** se email/telefone/documento inválidos (validação de `Contato`/`DocumentoFiscal`). Não há endpoint de listagem — o id retornado na criação é a única forma de referenciar o cliente depois (ex.: ao criar um agendamento).
+
+## `POST /api/servicos`
+
+Cadastra um serviço vinculado a um prestador. Executa `CadastrarServicoUseCase`.
+
+**Request** (`CadastrarServicoRequest`):
+```json
+{ "prestadorId": "uuid", "nome": "Massagem relaxante", "duracaoMinutos": 60, "preco": 150.00, "percentualSinal": 30 }
+```
+
+**201 Created** (`ServicoResponse`):
+```json
+{ "id": "uuid", "prestadorId": "uuid", "nome": "Massagem relaxante", "duracaoMinutos": 60, "preco": 150.00, "percentualSinal": 30.00 }
+```
+**404** se o prestador não existir. **400** se `duracaoMinutos` não for positivo ou demais validações de domínio falharem.
+
+## `GET /api/servicos?prestadorId={uuid}`
+
+Lista os serviços de um prestador. Executa `ListarServicosPorPrestadorUseCase`. **200 OK**, array de `ServicoResponse` (vazio se o prestador não tiver serviços ou não existir — não há 404 aqui, uma lista vazia é uma resposta válida).
 
 ## `POST /api/agendamentos`
 

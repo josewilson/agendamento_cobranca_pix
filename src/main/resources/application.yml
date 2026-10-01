@@ -57,6 +57,10 @@ twilio:
   sms-from: ${TWILIO_SMS_FROM:}
   whatsapp-from: ${TWILIO_WHATSAPP_FROM:+14155238886}
 
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
 ---
 # Perfil dev: usado SÓ pelos testes (ver specs/04-roadmap.md) — nunca para rodar a aplicação
 # de verdade, que deve sempre usar o perfil padrão com Postgres real (docker-compose up -d).

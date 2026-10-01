@@ -8,6 +8,7 @@ import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -28,5 +29,10 @@ public class PrestadorRepositoryAdapter implements PrestadorRepository {
     @Override
     public Optional<Prestador> buscarPorId(PrestadorId id) {
         return jpaRepository.findById(id.valor()).map(PrestadorMapper::paraDominio);
+    }
+
+    @Override
+    public List<Prestador> buscarTodos() {
+        return jpaRepository.findAll().stream().map(PrestadorMapper::paraDominio).toList();
     }
 }
