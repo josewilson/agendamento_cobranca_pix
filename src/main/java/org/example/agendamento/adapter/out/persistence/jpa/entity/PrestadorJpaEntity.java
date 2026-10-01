@@ -18,6 +18,9 @@ public class PrestadorJpaEntity {
     @Column(nullable = false)
     private String nome;
 
+    @Column(nullable = false)
+    private String telefone;
+
     @Column(name = "documento_numero", nullable = false)
     private String documentoNumero;
 
@@ -38,6 +41,9 @@ public class PrestadorJpaEntity {
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
+
+    public String getTelefone() { return telefone; }
+    public void setTelefone(String telefone) { this.telefone = telefone; }
 
     public String getDocumentoNumero() { return documentoNumero; }
     public void setDocumentoNumero(String documentoNumero) { this.documentoNumero = documentoNumero; }

@@ -3,7 +3,7 @@ import { api } from '../api/client';
 
 export default function PrestadoresPage() {
   const [prestadores, setPrestadores] = useState([]);
-  const [form, setForm] = useState({ nome: '', documentoNumero: '', documentoTipo: 'CNPJ' });
+  const [form, setForm] = useState({ nome: '', telefone: '', documentoNumero: '', documentoTipo: 'CNPJ' });
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(false);
 
@@ -25,7 +25,7 @@ export default function PrestadoresPage() {
     setCarregando(true);
     try {
       await api.post('/api/prestadores', form);
-      setForm({ nome: '', documentoNumero: '', documentoTipo: 'CNPJ' });
+      setForm({ nome: '', telefone: '', documentoNumero: '', documentoTipo: 'CNPJ' });
       await carregar();
     } catch (e) {
       setErro(e.message);
@@ -42,6 +42,10 @@ export default function PrestadoresPage() {
         <label>
           Nome
           <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
+        </label>
+        <label>
+          Telefone
+          <input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} required />
         </label>
         <label>
           Documento
@@ -69,16 +73,14 @@ export default function PrestadoresPage() {
         <thead>
           <tr>
             <th>Nome</th>
-            <th>Documento</th>
+            <th>Telefone</th>
           </tr>
         </thead>
         <tbody>
           {prestadores.map((p) => (
             <tr key={p.id}>
               <td>{p.nome}</td>
-              <td>
-                {p.documentoTipo}: {p.documentoNumero}
-              </td>
+              <td>{p.telefone}</td>
             </tr>
           ))}
         </tbody>

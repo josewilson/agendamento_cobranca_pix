@@ -12,15 +12,15 @@ Cadastra um prestador. Executa `CadastrarPrestadorUseCase`. Política de cancela
 
 **Request** (`CadastrarPrestadorRequest`, todos `@NotBlank`):
 ```json
-{ "nome": "Clinica Bem-Estar", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
+{ "nome": "Clinica Bem-Estar", "telefone": "11987654321", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
 ```
 `documentoTipo` é `"CPF"` ou `"CNPJ"`.
 
 **201 Created** (`PrestadorResponse`):
 ```json
-{ "id": "uuid", "nome": "Clinica Bem-Estar", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
+{ "id": "uuid", "nome": "Clinica Bem-Estar", "telefone": "11987654321", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
 ```
-**400** se nome vazio ou documento com dígito verificador inválido (validação do próprio `DocumentoFiscal`).
+**400** se nome vazio, telefone em formato inválido ou documento com dígito verificador inválido (validação do próprio `Prestador`/`DocumentoFiscal`). O frontend mostra `telefone` na listagem de prestadores em vez do documento (ver `CLAUDE.md`, "Regra inegociável") — o documento continua sendo coletado e armazenado, só não aparece na tela.
 
 ## `GET /api/prestadores`
 

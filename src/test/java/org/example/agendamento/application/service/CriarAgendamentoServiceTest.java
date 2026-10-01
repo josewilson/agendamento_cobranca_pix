@@ -59,7 +59,7 @@ class CriarAgendamentoServiceTest {
         service = new CriarAgendamentoService(agendamentoRepository, clienteRepository, prestadorRepository,
                 servicoRepository, gatewayDePagamento, publicadorDeEventos, clock);
 
-        prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar",
+        prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "11987654321",
                 DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
         prestadorRepository.salvar(prestador);

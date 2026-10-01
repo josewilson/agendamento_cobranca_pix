@@ -52,7 +52,7 @@ public class DevDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        prestadorRepository.salvar(new Prestador(PRESTADOR_ID, "Clinica Bem-Estar",
+        prestadorRepository.salvar(new Prestador(PRESTADOR_ID, "Clinica Bem-Estar", "11987654321",
                 DocumentoFiscal.cnpj("11444777000161"), PoliticaCancelamento.padrao()));
 
         clienteRepository.salvar(new Cliente(CLIENTE_ID, "Maria Silva",

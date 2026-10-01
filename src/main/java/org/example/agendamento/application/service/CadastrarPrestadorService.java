@@ -22,7 +22,8 @@ public class CadastrarPrestadorService implements CadastrarPrestadorUseCase {
     public Prestador executar(CadastrarPrestadorCommand command) {
         DocumentoFiscal.TipoDocumento tipo = DocumentoFiscal.TipoDocumento.valueOf(command.documentoTipo().toUpperCase());
         DocumentoFiscal documento = new DocumentoFiscal(command.documentoNumero(), tipo);
-        Prestador prestador = new Prestador(PrestadorId.novo(), command.nome(), documento, PoliticaCancelamento.padrao());
+        Prestador prestador = new Prestador(PrestadorId.novo(), command.nome(), command.telefone(), documento,
+                PoliticaCancelamento.padrao());
         return prestadorRepository.salvar(prestador);
     }
 }

@@ -21,7 +21,7 @@ class PrestadorRepositoryAdapterIT extends AbstractPersistenceIT {
 
     @Test
     void deveSalvarEBuscarPrestadorPorId() {
-        Prestador prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar",
+        Prestador prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "11987654321",
                 DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
 
@@ -30,6 +30,7 @@ class PrestadorRepositoryAdapterIT extends AbstractPersistenceIT {
 
         assertThat(encontrado).isPresent();
         assertThat(encontrado.get().nome()).isEqualTo("Clinica Bem Estar");
+        assertThat(encontrado.get().telefone()).isEqualTo("11987654321");
         assertThat(encontrado.get().documento()).isEqualTo(prestador.documento());
         assertThat(encontrado.get().politicaCancelamentoPadrao()).isEqualTo(prestador.politicaCancelamentoPadrao());
     }

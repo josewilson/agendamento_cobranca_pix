@@ -31,7 +31,7 @@ class ServicoRepositoryAdapterIT extends AbstractPersistenceIT {
 
     @BeforeEach
     void setUp() {
-        prestador = prestadorRepository.salvar(new Prestador(PrestadorId.novo(), "Clinica Bem Estar",
+        prestador = prestadorRepository.salvar(new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "11987654321",
                 DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100))));
     }

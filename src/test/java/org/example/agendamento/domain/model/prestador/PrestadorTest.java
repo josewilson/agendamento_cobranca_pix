@@ -17,15 +17,22 @@ class PrestadorTest {
 
     @Test
     void deveCriarPrestadorValido() {
-        Prestador prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar", documento, politica);
+        Prestador prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "11987654321", documento, politica);
 
         assertThat(prestador.nome()).isEqualTo("Clinica Bem Estar");
+        assertThat(prestador.telefone()).isEqualTo("11987654321");
         assertThat(prestador.politicaCancelamentoPadrao()).isEqualTo(politica);
     }
 
     @Test
     void deveLancarExcecaoParaNomeVazio() {
-        assertThatThrownBy(() -> new Prestador(PrestadorId.novo(), "", documento, politica))
+        assertThatThrownBy(() -> new Prestador(PrestadorId.novo(), "", "11987654321", documento, politica))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void deveLancarExcecaoParaTelefoneInvalido() {
+        assertThatThrownBy(() -> new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "123", documento, politica))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

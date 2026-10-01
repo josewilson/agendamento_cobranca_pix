@@ -35,7 +35,7 @@ class PrestadorControllerTest {
     private ListarPrestadoresUseCase listarPrestadoresUseCase;
 
     private static Prestador prestadorExemplo() {
-        return new Prestador(PrestadorId.novo(), "Clinica Bem-Estar",
+        return new Prestador(PrestadorId.novo(), "Clinica Bem-Estar", "11987654321",
                 DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
     }
@@ -48,6 +48,7 @@ class PrestadorControllerTest {
         String corpo = """
                 {
                     "nome": "Clinica Bem-Estar",
+                    "telefone": "11987654321",
                     "documentoNumero": "11222333000181",
                     "documentoTipo": "CNPJ"
                 }
@@ -59,6 +60,7 @@ class PrestadorControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(prestador.id().valor().toString()))
                 .andExpect(jsonPath("$.nome").value("Clinica Bem-Estar"))
+                .andExpect(jsonPath("$.telefone").value("11987654321"))
                 .andExpect(jsonPath("$.documentoTipo").value("CNPJ"));
     }
 
@@ -66,6 +68,7 @@ class PrestadorControllerTest {
     void deveRetornar400QuandoNomeAusente() throws Exception {
         String corpo = """
                 {
+                    "telefone": "11987654321",
                     "documentoNumero": "11222333000181",
                     "documentoTipo": "CNPJ"
                 }

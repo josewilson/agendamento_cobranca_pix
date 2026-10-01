@@ -16,11 +16,12 @@ class CadastrarPrestadorServiceTest {
     @Test
     void deveCadastrarPrestadorComCnpjValido() {
         CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
-                "Clinica Bem-Estar", "11222333000181", "CNPJ");
+                "Clinica Bem-Estar", "11987654321", "11222333000181", "CNPJ");
 
         Prestador prestador = service.executar(command);
 
         assertThat(prestador.nome()).isEqualTo("Clinica Bem-Estar");
+        assertThat(prestador.telefone()).isEqualTo("11987654321");
         assertThat(prestador.documento().numero()).isEqualTo("11222333000181");
         assertThat(prestadorRepository.buscarPorId(prestador.id())).contains(prestador);
     }
@@ -28,7 +29,16 @@ class CadastrarPrestadorServiceTest {
     @Test
     void deveLancarExcecaoQuandoCnpjInvalido() {
         CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
-                "Clinica Bem-Estar", "00000000000000", "CNPJ");
+                "Clinica Bem-Estar", "11987654321", "00000000000000", "CNPJ");
+
+        assertThatThrownBy(() -> service.executar(command))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoTelefoneInvalido() {
+        CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
+                "Clinica Bem-Estar", "123", "11222333000181", "CNPJ");
 
         assertThatThrownBy(() -> service.executar(command))
                 .isInstanceOf(IllegalArgumentException.class);
