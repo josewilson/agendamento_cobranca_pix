@@ -120,7 +120,10 @@ export default function NovoAgendamentoPage() {
       {resultado && (
         <div className="aviso-sucesso">
           <p>
-            Agendamento criado! Status: <strong>{resultado.agendamento.status}</strong>
+            Agendamento criado! Status:{' '}
+            <span className="status-badge" data-status={resultado.agendamento.status}>
+              {resultado.agendamento.status}
+            </span>
           </p>
           {resultado.cobranca && (
             <div>

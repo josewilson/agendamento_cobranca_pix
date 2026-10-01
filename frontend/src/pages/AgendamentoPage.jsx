@@ -49,7 +49,7 @@ export default function AgendamentoPage() {
     <div>
       <h1>Agendamento</h1>
       <p>
-        Status: <strong>{agendamento.status}</strong>
+        Status: <span className="status-badge" data-status={agendamento.status}>{agendamento.status}</span>
       </p>
       <p>Início: {new Date(agendamento.inicio).toLocaleString('pt-BR')}</p>
       <p>Fim: {new Date(agendamento.fim).toLocaleString('pt-BR')}</p>
