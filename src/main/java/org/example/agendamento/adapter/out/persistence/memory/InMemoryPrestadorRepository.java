@@ -30,6 +30,13 @@ public class InMemoryPrestadorRepository implements PrestadorRepository {
     }
 
     @Override
+    public Optional<Prestador> buscarPorEmail(String email) {
+        return prestadores.values().stream()
+                .filter(prestador -> prestador.email().equalsIgnoreCase(email))
+                .findFirst();
+    }
+
+    @Override
     public List<Prestador> buscarTodos() {
         return new ArrayList<>(prestadores.values());
     }

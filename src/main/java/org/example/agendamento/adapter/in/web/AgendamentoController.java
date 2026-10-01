@@ -1,6 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
 import jakarta.validation.Valid;
+import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import org.example.agendamento.adapter.in.web.dto.AgendamentoResponse;
 import org.example.agendamento.adapter.in.web.dto.CriarAgendamentoRequest;
 import org.example.agendamento.adapter.in.web.dto.CriarAgendamentoResponse;
@@ -24,12 +25,12 @@ import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.example.agendamento.domain.model.servico.ServicoId;
 import org.example.agendamento.domain.model.shared.Periodo;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -78,8 +79,8 @@ public class AgendamentoController {
     }
 
     @GetMapping
-    public List<AgendamentoResponse> listarPorPrestador(@RequestParam UUID prestadorId) {
-        ListarAgendamentosPorPrestadorQuery query = new ListarAgendamentosPorPrestadorQuery(new PrestadorId(prestadorId));
+    public List<AgendamentoResponse> listarDoPrestadorLogado(@AuthenticationPrincipal PrestadorPrincipal principal) {
+        ListarAgendamentosPorPrestadorQuery query = new ListarAgendamentosPorPrestadorQuery(principal.prestadorId());
         return listarAgendamentosPorPrestadorUseCase.executar(query).stream().map(AgendamentoResponse::de).toList();
     }
 

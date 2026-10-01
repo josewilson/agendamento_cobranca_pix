@@ -4,27 +4,45 @@ Implementada em `src/main/java/org/example/agendamento/adapter/in/web/`. Base pa
 
 Documentação interativa via `springdoc-openapi-starter-webmvc-ui` em `/swagger-ui.html` (`/v3/api-docs` para o JSON cru) — permite testar todos os endpoints direto do navegador. Com o perfil `dev` ativo, `DevDataSeeder` (`adapter/in/seed/`) popula um prestador, cliente e serviço de IDs fixos no startup (logados no console), um atalho rápido além dos endpoints de cadastro abaixo.
 
-**CORS**: liberado para `app.cors.allowed-origins` (`WebConfig`, `adapter/in/web/`), por padrão só `http://localhost:5173` (o frontend separado em `frontend/`, ver `CLAUDE.md`). Sem isso o browser bloqueia as chamadas antes de chegarem aos controllers.
+**CORS**: liberado para `app.cors.allowed-origins` (`WebConfig`, `adapter/in/web/`), por padrão só `http://localhost:5173` (o frontend separado em `frontend/`, ver `CLAUDE.md`), com `allowCredentials(true)` — necessário para o cookie de sessão do login (ver abaixo) ser enviado nas chamadas entre origens diferentes. Sem isso o browser bloqueia as chamadas antes de chegarem aos controllers.
+
+**Autenticação**: login simples de `Prestador` via sessão (cookie `JSESSIONID`), ver seção `/api/auth/*` abaixo. `Cliente` continua sem login (decisão de escopo). A maior parte da API é pública (fluxo de reserva: listar prestador/serviço, cadastrar cliente, criar/consultar/cancelar/marcar no-show um agendamento, webhooks); só `GET /api/agendamentos` e `POST /api/servicos` exigem estar autenticado como o `Prestador` dono dos dados — endpoints sem login nessas rotas retornam **401**.
 
 ## `POST /api/prestadores`
 
-Cadastra um prestador. Executa `CadastrarPrestadorUseCase`. Política de cancelamento sempre `PoliticaCancelamento.padrao()` (não configurável via API ainda).
+Cadastra um prestador — é também o cadastro (sign-up) de login, já que só `Prestador` autentica. Executa `CadastrarPrestadorUseCase`. Política de cancelamento sempre `PoliticaCancelamento.padrao()` (não configurável via API ainda). Público (não exige login — é como se cria a conta).
 
-**Request** (`CadastrarPrestadorRequest`, todos `@NotBlank`):
+**Request** (`CadastrarPrestadorRequest`, todos `@NotBlank`; `senha` com `@Size(min = 6)`):
 ```json
-{ "nome": "Clinica Bem-Estar", "telefone": "11987654321", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
+{ "nome": "Clinica Bem-Estar", "telefone": "11987654321", "email": "clinica@exemplo.com", "senha": "senha123", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
 ```
-`documentoTipo` é `"CPF"` ou `"CNPJ"`.
+`documentoTipo` é `"CPF"` ou `"CNPJ"`. `email` precisa ser único (`uk_prestador_email`); `senha` nunca é retornada nem armazenada em texto puro (hash BCrypt, ver `CLAUDE.md`).
 
-**201 Created** (`PrestadorResponse`):
+**201 Created** (`PrestadorResponse` — nunca inclui a senha/hash):
 ```json
-{ "id": "uuid", "nome": "Clinica Bem-Estar", "telefone": "11987654321", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
+{ "id": "uuid", "nome": "Clinica Bem-Estar", "telefone": "11987654321", "email": "clinica@exemplo.com", "documentoNumero": "11444777000161", "documentoTipo": "CNPJ" }
 ```
-**400** se nome vazio, telefone em formato inválido ou documento com dígito verificador inválido (validação do próprio `Prestador`/`DocumentoFiscal`). O frontend mostra `telefone` na listagem de prestadores em vez do documento (ver `CLAUDE.md`, "Regra inegociável") — o documento continua sendo coletado e armazenado, só não aparece na tela.
+**400** se nome vazio, telefone/email em formato inválido, senha com menos de 6 caracteres, ou documento com dígito verificador inválido (validação do próprio `Prestador`/`DocumentoFiscal`). O frontend mostra `telefone` na listagem de prestadores em vez do documento (ver `CLAUDE.md`, "Regra inegociável") — o documento continua sendo coletado e armazenado, só não aparece na tela.
 
 ## `GET /api/prestadores`
 
-Lista todos os prestadores cadastrados. Executa `ListarPrestadoresUseCase`. **200 OK**, array de `PrestadorResponse`.
+Lista todos os prestadores cadastrados. Executa `ListarPrestadoresUseCase`. **200 OK**, array de `PrestadorResponse`. Público — a tela de novo agendamento (fluxo de reserva, sem login) precisa listar prestadores para o cliente escolher.
+
+## `POST /api/auth/login`
+
+Login do prestador. Autentica via `AuthenticationManager` (Spring Security) e grava a sessão num cookie `JSESSIONID` (`HttpOnly`, `Set-Cookie` na resposta) — nenhum token é devolvido no corpo para o frontend guardar.
+
+**Request**: `{ "email": "clinica@exemplo.com", "senha": "senha123" }`
+
+**200 OK**: `{ "prestadorId": "uuid", "nome": "Clinica Bem-Estar" }`. **401** se email/senha não conferem.
+
+## `POST /api/auth/logout`
+
+Invalida a sessão atual. **204 No Content**.
+
+## `GET /api/auth/me`
+
+Consulta quem está logado na sessão atual (usado pelo frontend para saber se deve mostrar a tela de login ou a área autenticada). **200 OK**: mesmo formato de `/api/auth/login`. **401** se não houver sessão válida.
 
 ## `POST /api/clientes`
 
@@ -48,18 +66,18 @@ Lista todos os clientes cadastrados. Executa `ListarClientesUseCase`. **200 OK**
 
 ## `POST /api/servicos`
 
-Cadastra um serviço vinculado a um prestador. Executa `CadastrarServicoUseCase`.
+Cadastra um serviço vinculado ao prestador autenticado. Executa `CadastrarServicoUseCase`. **Exige login** — `prestadorId` não vem mais no corpo da requisição, o controller pega do `@AuthenticationPrincipal` (sessão), para um prestador não poder cadastrar serviço em nome de outro.
 
 **Request** (`CadastrarServicoRequest`):
 ```json
-{ "prestadorId": "uuid", "nome": "Massagem relaxante", "duracaoMinutos": 60, "preco": 150.00, "percentualSinal": 30 }
+{ "nome": "Massagem relaxante", "duracaoMinutos": 60, "preco": 150.00, "percentualSinal": 30 }
 ```
 
 **201 Created** (`ServicoResponse`):
 ```json
 { "id": "uuid", "prestadorId": "uuid", "nome": "Massagem relaxante", "duracaoMinutos": 60, "preco": 150.00, "percentualSinal": 30.00 }
 ```
-**404** se o prestador não existir. **400** se `duracaoMinutos` não for positivo ou demais validações de domínio falharem.
+**401** se não autenticado. **400** se `duracaoMinutos` não for positivo ou demais validações de domínio falharem.
 
 ## `GET /api/servicos?prestadorId={uuid}`
 
@@ -102,9 +120,9 @@ Consulta um agendamento. Executa `ConsultarAgendamentoUseCase`.
 
 **200 OK** (`AgendamentoResponse`, mesmo formato do objeto `agendamento` acima). **404** se não existir.
 
-## `GET /api/agendamentos?prestadorId={uuid}`
+## `GET /api/agendamentos`
 
-Lista os agendamentos de um prestador (qualquer status, inclusive histórico). Executa `ListarAgendamentosPorPrestadorUseCase`. **200 OK**, array de `AgendamentoResponse` ordenado por `inicio` ascendente (vazio se o prestador não tiver agendamentos ou não existir — não há 404, mesmo padrão de `GET /api/servicos`). É a tela de agenda do frontend: por causa da regra de nunca mostrar id na UI (ver `CLAUDE.md`), sem este endpoint não havia nenhum jeito de voltar a encontrar um agendamento depois de sair da tela em que ele foi criado.
+Lista os agendamentos do **prestador autenticado** (qualquer status, inclusive histórico). Executa `ListarAgendamentosPorPrestadorUseCase`. **Exige login** — não recebe `prestadorId` como parâmetro (recebia antes do login existir); o controller deriva do `@AuthenticationPrincipal`, então um prestador só vê a própria agenda, nunca a de outro. **200 OK**, array de `AgendamentoResponse` ordenado por `inicio` ascendente (vazio se o prestador não tiver agendamentos — não há 404). **401** se não autenticado. É a tela "Minha agenda" do frontend: por causa da regra de nunca mostrar id na UI (ver `CLAUDE.md`), sem este endpoint não havia nenhum jeito de voltar a encontrar um agendamento depois de sair da tela em que ele foi criado.
 
 ## `POST /api/agendamentos/{id}/cancelar`
 
@@ -180,7 +198,7 @@ Diferente do Asaas, o corpo **não traz o status do pagamento** — só o id. O 
 
 ## Tratamento de erros (`GlobalExceptionHandler`)
 
-Todo erro retorna `ErrorResponse { "mensagem": "..." }`.
+Todo erro de caso de uso retorna `ErrorResponse { "mensagem": "..." }`.
 
 | Exceção | Status |
 |---|---|
@@ -189,3 +207,5 @@ Todo erro retorna `ErrorResponse { "mensagem": "..." }`.
 | `TransicaoDeStatusInvalidaException` | 409 |
 | `IllegalArgumentException` / `IllegalStateException` (validações de domínio) | 400 |
 | `MethodArgumentNotValidException` (Bean Validation) | 400, com `campo: mensagem` por erro de campo |
+
+**401 (sem sessão válida)** vem do `AuthenticationEntryPoint` de `SecurityConfig` (`adapter/in/web/security/`), não do `GlobalExceptionHandler` — corpo no formato padrão do Spring Boot (`{timestamp, status, error, path}`), não `ErrorResponse`, já que é tratado na camada de segurança (antes do `DispatcherServlet`), não num `@ExceptionHandler` de controller.

@@ -82,6 +82,18 @@ Mesmo padrão de novo: `EstornoEventListener` (`adapter/in/evento/`) reage a `Ag
 
 `Agendamento` ganhou o campo `referenciaPagamento` (nullable — só preenchido quando há sinal) e o método `vincularReferenciaPagamento(String)`, chamado uma única vez por `CriarAgendamentoService` logo após `gerarCobrancaPix`. Persistido na coluna `referencia_pagamento` (migration `V5`).
 
+## Autenticação do Prestador (não é um caso de uso de aplicação — é infraestrutura de borda)
+
+Pedido explícito do usuário: login simples, só para `Prestador` (`Cliente` continua sem login — decisão de escopo). Por isso não há `AutenticarPrestadorUseCase` em `application/port/in`: autenticar é uma preocupação de borda (Spring Security), não uma regra de negócio da aplicação. O cadastro de prestador (`CadastrarPrestadorUseCase`) é quem ganhou a responsabilidade nova: `CadastrarPrestadorCommand` passou a carregar `email`/`senha` (texto puro), e `CadastrarPrestadorService` injeta `PasswordEncoder` (Spring Security) para gerar o hash BCrypt antes de montar o `Prestador` — o domínio nunca vê a senha em texto puro nem faz hashing, só valida que `senhaHash` não é vazio (mesmo nível de validação simples que já tinha para `nome`/`telefone`).
+
+`Prestador` ganhou `email` (`String`, único, validado com o mesmo padrão de `Contato.email`, mas duplicado como campo simples — mesmo precedente do `telefone`, ver `specs/04-roadmap.md`) e `senhaHash` (`String`, só valida não-vazio). `PrestadorRepository` ganhou `buscarPorEmail(String)`, usado por `PrestadorUserDetailsService` (`adapter/in/web/security/`, implementa `UserDetailsService` do Spring Security) para autenticar.
+
+Dois casos de uso REST existentes passaram a exigir login e derivar o `PrestadorId` da sessão autenticada em vez de confiar num valor enviado pelo chamador:
+- `ListarAgendamentosPorPrestadorUseCase` — `GET /api/agendamentos` não recebe mais `prestadorId` como parâmetro; o controller pega do `@AuthenticationPrincipal`. Antes dessa mudança, qualquer um podia pedir a agenda de qualquer prestador só sabendo o id.
+- `CadastrarServicoUseCase` — `POST /api/servicos` não recebe mais `prestadorId` no corpo; idem, vem da sessão. Impede que um prestador cadastre serviço em nome de outro.
+
+O resto do fluxo público (listar prestador/serviço para montar a tela de reserva, cadastrar cliente, criar/consultar/cancelar/marcar no-show um agendamento, webhooks de pagamento) continua sem exigir login — decisão explícita de escopo, não uma lacuna esquecida. Ver `specs/03-api-rest.md` para os endpoints `/api/auth/*` e `specs/04-roadmap.md` para o racional completo e o débito técnico aceito (CSRF desabilitado).
+
 ## Portas de saída usadas pelos casos de uso
 
 | Porta | Papel |

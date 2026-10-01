@@ -60,7 +60,7 @@ class CriarAgendamentoServiceTest {
                 servicoRepository, gatewayDePagamento, publicadorDeEventos, clock);
 
         prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "11987654321",
-                DocumentoFiscal.cnpj("11.222.333/0001-81"),
+                "clinica@exemplo.com", "hash-fake-de-teste", DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
         prestadorRepository.salvar(prestador);
 

@@ -32,6 +32,11 @@ public class PrestadorRepositoryAdapter implements PrestadorRepository {
     }
 
     @Override
+    public Optional<Prestador> buscarPorEmail(String email) {
+        return jpaRepository.findByEmailIgnoreCase(email).map(PrestadorMapper::paraDominio);
+    }
+
+    @Override
     public List<Prestador> buscarTodos() {
         return jpaRepository.findAll().stream().map(PrestadorMapper::paraDominio).toList();
     }

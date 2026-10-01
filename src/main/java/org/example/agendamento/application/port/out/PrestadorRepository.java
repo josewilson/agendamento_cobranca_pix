@@ -12,5 +12,7 @@ public interface PrestadorRepository {
 
     Optional<Prestador> buscarPorId(PrestadorId id);
 
+    Optional<Prestador> buscarPorEmail(String email);
+
     List<Prestador> buscarTodos();
 }

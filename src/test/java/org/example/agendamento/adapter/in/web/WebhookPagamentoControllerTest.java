@@ -1,10 +1,12 @@
 package org.example.agendamento.adapter.in.web;
 
+import org.example.agendamento.adapter.in.web.security.SecurityConfig;
 import org.example.agendamento.application.port.in.ProcessarWebhookPagamentoUseCase;
 import org.example.agendamento.application.port.in.WebhookPagamentoCommand;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -13,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WebhookPagamentoController.class)
+@Import(SecurityConfig.class)
 class WebhookPagamentoControllerTest {
 
     private static final String AGENDAMENTO_ID = "11111111-1111-1111-1111-111111111111";

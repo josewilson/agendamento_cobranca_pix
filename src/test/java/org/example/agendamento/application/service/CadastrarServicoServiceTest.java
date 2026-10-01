@@ -28,6 +28,7 @@ class CadastrarServicoServiceTest {
     @BeforeEach
     void setUp() {
         prestador = new Prestador(PrestadorId.novo(), "Clinica Bem-Estar", "11987654321",
+                "clinica@exemplo.com", "hash-fake-de-teste",
                 DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
         prestadorRepository.salvar(prestador);
     }

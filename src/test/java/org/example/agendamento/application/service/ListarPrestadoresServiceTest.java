@@ -17,9 +17,9 @@ class ListarPrestadoresServiceTest {
     @Test
     void deveListarTodosOsPrestadoresCadastrados() {
         Prestador prestador1 = new Prestador(PrestadorId.novo(), "Clinica A", "11987654321",
-                DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
+                "clinica-a@exemplo.com", "hash-fake-de-teste", DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
         Prestador prestador2 = new Prestador(PrestadorId.novo(), "Clinica B", "11988887777",
-                DocumentoFiscal.cpf("11144477735"), PoliticaCancelamento.padrao());
+                "clinica-b@exemplo.com", "hash-fake-de-teste", DocumentoFiscal.cpf("11144477735"), PoliticaCancelamento.padrao());
         prestadorRepository.salvar(prestador1);
         prestadorRepository.salvar(prestador2);
 

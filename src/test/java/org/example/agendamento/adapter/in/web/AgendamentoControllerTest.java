@@ -1,5 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
+import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
+import org.example.agendamento.adapter.in.web.security.SecurityConfig;
 import org.example.agendamento.application.exception.RecursoNaoEncontradoException;
 import org.example.agendamento.application.port.in.CancelarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.ConsultarAgendamentoUseCase;
@@ -12,30 +14,38 @@ import org.example.agendamento.domain.model.agendamento.Agendamento;
 import org.example.agendamento.domain.model.agendamento.AgendamentoId;
 import org.example.agendamento.domain.model.agendamento.ResultadoCancelamento;
 import org.example.agendamento.domain.model.cliente.ClienteId;
+import org.example.agendamento.domain.model.prestador.Prestador;
 import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.example.agendamento.domain.model.servico.ServicoId;
 import org.example.agendamento.domain.model.shared.Dinheiro;
+import org.example.agendamento.domain.model.shared.DocumentoFiscal;
 import org.example.agendamento.domain.model.shared.Periodo;
 import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AgendamentoController.class)
+@Import(SecurityConfig.class)
 class AgendamentoControllerTest {
 
     @Autowired
@@ -161,11 +171,25 @@ class AgendamentoControllerTest {
     @Test
     void deveListarAgendamentosPorPrestadorERetornar200() throws Exception {
         Agendamento agendamento = agendamentoExemplo();
-        given(listarAgendamentosPorPrestadorUseCase.executar(any())).willReturn(java.util.List.of(agendamento));
+        given(listarAgendamentosPorPrestadorUseCase.executar(any())).willReturn(List.of(agendamento));
 
-        mockMvc.perform(get("/api/agendamentos").param("prestadorId", agendamento.prestadorId().valor().toString()))
+        mockMvc.perform(get("/api/agendamentos").with(authentication(autenticacaoDoPrestador(agendamento.prestadorId()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(agendamento.id().valor().toString()));
+    }
+
+    @Test
+    void deveRetornar401QuandoListarSemLogin() throws Exception {
+        mockMvc.perform(get("/api/agendamentos"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    private static Authentication autenticacaoDoPrestador(PrestadorId prestadorId) {
+        Prestador prestador = new Prestador(prestadorId, "Clinica Teste", "11987654321",
+                "clinica@exemplo.com", "hash-fake-de-teste",
+                DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
+        PrestadorPrincipal principal = new PrestadorPrincipal(prestador);
+        return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
     }
 
     private static final String UUID_EXEMPLO = "11111111-1111-1111-1111-111111111111";

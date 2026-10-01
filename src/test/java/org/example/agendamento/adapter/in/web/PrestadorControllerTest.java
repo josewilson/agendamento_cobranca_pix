@@ -1,5 +1,6 @@
 package org.example.agendamento.adapter.in.web;
 
+import org.example.agendamento.adapter.in.web.security.SecurityConfig;
 import org.example.agendamento.application.port.in.CadastrarPrestadorUseCase;
 import org.example.agendamento.application.port.in.ListarPrestadoresUseCase;
 import org.example.agendamento.domain.model.prestador.Prestador;
@@ -9,6 +10,7 @@ import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PrestadorController.class)
+@Import(SecurityConfig.class)
 class PrestadorControllerTest {
 
     @Autowired
@@ -36,7 +39,7 @@ class PrestadorControllerTest {
 
     private static Prestador prestadorExemplo() {
         return new Prestador(PrestadorId.novo(), "Clinica Bem-Estar", "11987654321",
-                DocumentoFiscal.cnpj("11.222.333/0001-81"),
+                "clinica@exemplo.com", "hash-fake-de-teste", DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
     }
 
@@ -49,6 +52,8 @@ class PrestadorControllerTest {
                 {
                     "nome": "Clinica Bem-Estar",
                     "telefone": "11987654321",
+                    "email": "clinica@exemplo.com",
+                    "senha": "senha123",
                     "documentoNumero": "11222333000181",
                     "documentoTipo": "CNPJ"
                 }
@@ -61,6 +66,7 @@ class PrestadorControllerTest {
                 .andExpect(jsonPath("$.id").value(prestador.id().valor().toString()))
                 .andExpect(jsonPath("$.nome").value("Clinica Bem-Estar"))
                 .andExpect(jsonPath("$.telefone").value("11987654321"))
+                .andExpect(jsonPath("$.email").value("clinica@exemplo.com"))
                 .andExpect(jsonPath("$.documentoTipo").value("CNPJ"));
     }
 

@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 
 export default function PrestadoresPage() {
   const [prestadores, setPrestadores] = useState([]);
-  const [form, setForm] = useState({ nome: '', telefone: '', documentoNumero: '', documentoTipo: 'CNPJ' });
+  const [form, setForm] = useState({
+    nome: '',
+    telefone: '',
+    email: '',
+    senha: '',
+    documentoNumero: '',
+    documentoTipo: 'CNPJ',
+  });
+  const [cadastrado, setCadastrado] = useState(false);
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(false);
 
@@ -22,10 +31,12 @@ export default function PrestadoresPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setErro(null);
+    setCadastrado(false);
     setCarregando(true);
     try {
       await api.post('/api/prestadores', form);
-      setForm({ nome: '', telefone: '', documentoNumero: '', documentoTipo: 'CNPJ' });
+      setForm({ nome: '', telefone: '', email: '', senha: '', documentoNumero: '', documentoTipo: 'CNPJ' });
+      setCadastrado(true);
       await carregar();
     } catch (e) {
       setErro(e.message);
@@ -48,6 +59,25 @@ export default function PrestadoresPage() {
           <input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} required />
         </label>
         <label>
+          Email (login)
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+          />
+        </label>
+        <label>
+          Senha
+          <input
+            type="password"
+            value={form.senha}
+            onChange={(e) => setForm({ ...form, senha: e.target.value })}
+            minLength={6}
+            required
+          />
+        </label>
+        <label>
           Documento
           <input
             value={form.documentoNumero}
@@ -68,6 +98,14 @@ export default function PrestadoresPage() {
       </form>
 
       {erro && <p className="erro">{erro}</p>}
+
+      {cadastrado && (
+        <div className="aviso-sucesso">
+          <p>
+            Prestador cadastrado! Agora é só <Link to="/login">entrar</Link> com o email e a senha escolhidos.
+          </p>
+        </div>
+      )}
 
       <table className="tabela">
         <thead>

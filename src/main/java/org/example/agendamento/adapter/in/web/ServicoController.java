@@ -1,6 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
 import jakarta.validation.Valid;
+import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import org.example.agendamento.adapter.in.web.dto.CadastrarServicoRequest;
 import org.example.agendamento.adapter.in.web.dto.ServicoResponse;
 import org.example.agendamento.application.port.in.CadastrarServicoCommand;
@@ -10,6 +11,7 @@ import org.example.agendamento.application.port.in.ListarServicosPorPrestadorUse
 import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.example.agendamento.domain.model.servico.Servico;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,9 +38,10 @@ public class ServicoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ServicoResponse cadastrar(@Valid @RequestBody CadastrarServicoRequest request) {
+    public ServicoResponse cadastrar(@Valid @RequestBody CadastrarServicoRequest request,
+                                      @AuthenticationPrincipal PrestadorPrincipal principal) {
         CadastrarServicoCommand command = new CadastrarServicoCommand(
-                new PrestadorId(request.prestadorId()), request.nome(), request.duracaoMinutos(),
+                principal.prestadorId(), request.nome(), request.duracaoMinutos(),
                 request.preco(), request.percentualSinal());
         Servico servico = cadastrarServicoUseCase.executar(command);
         return ServicoResponse.de(servico);

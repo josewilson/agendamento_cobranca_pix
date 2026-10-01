@@ -35,6 +35,10 @@ public class DevDataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DevDataSeeder.class);
 
+    /** Hash bcrypt publico e amplamente usado em exemplos (nao corresponde a nenhuma senha real) — o
+     * prestador do perfil dev nunca e usado para login de verdade (ver CLAUDE.md: dev e so para teste). */
+    private static final String SENHA_HASH_PLACEHOLDER = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+
     public static final PrestadorId PRESTADOR_ID = PrestadorId.de("00000000-0000-0000-0000-000000000001");
     public static final ClienteId CLIENTE_ID = ClienteId.de("00000000-0000-0000-0000-000000000002");
     public static final ServicoId SERVICO_ID = ServicoId.de("00000000-0000-0000-0000-000000000003");
@@ -53,6 +57,7 @@ public class DevDataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         prestadorRepository.salvar(new Prestador(PRESTADOR_ID, "Clinica Bem-Estar", "11987654321",
+                "clinica@exemplo.com", SENHA_HASH_PLACEHOLDER,
                 DocumentoFiscal.cnpj("11444777000161"), PoliticaCancelamento.padrao()));
 
         clienteRepository.salvar(new Cliente(CLIENTE_ID, "Maria Silva",

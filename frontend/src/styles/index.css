@@ -93,6 +93,35 @@ h1 {
   box-shadow: var(--sombra);
 }
 
+.navbar-sessao {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navbar-usuario {
+  font-weight: 600;
+  color: var(--cor-texto);
+  font-size: 0.92rem;
+}
+
+.navbar-botao-sair {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1.5px solid var(--cor-borda);
+  box-shadow: none;
+}
+
+.navbar-botao-sair:hover {
+  background: rgba(109, 40, 217, 0.06);
+  color: var(--cor-primaria-escura);
+  border-color: var(--cor-primaria-clara);
+  box-shadow: none !important;
+}
+
 .container {
   max-width: 880px;
   margin: 0 auto;
@@ -119,27 +148,6 @@ h1 {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--cor-texto-suave);
-}
-
-.filtro {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--cor-texto-suave);
-  max-width: 360px;
-  margin-bottom: 1.5rem;
-}
-
-.filtro select {
-  padding: 0.65rem 0.8rem;
-  border: 1.5px solid var(--cor-borda);
-  border-radius: 10px;
-  font-size: 1rem;
-  font-family: inherit;
-  color: var(--cor-texto);
-  background: #fbfaff;
 }
 
 .form input,

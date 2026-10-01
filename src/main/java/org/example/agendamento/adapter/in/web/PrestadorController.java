@@ -34,7 +34,8 @@ public class PrestadorController {
     @ResponseStatus(HttpStatus.CREATED)
     public PrestadorResponse cadastrar(@Valid @RequestBody CadastrarPrestadorRequest request) {
         CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
-                request.nome(), request.telefone(), request.documentoNumero(), request.documentoTipo());
+                request.nome(), request.telefone(), request.email(), request.senha(),
+                request.documentoNumero(), request.documentoTipo());
         Prestador prestador = cadastrarPrestadorUseCase.executar(command);
         return PrestadorResponse.de(prestador);
     }

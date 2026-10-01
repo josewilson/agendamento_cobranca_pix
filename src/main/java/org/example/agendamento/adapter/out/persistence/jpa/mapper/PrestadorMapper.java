@@ -18,6 +18,8 @@ public final class PrestadorMapper {
         entity.setId(prestador.id().valor());
         entity.setNome(prestador.nome());
         entity.setTelefone(prestador.telefone());
+        entity.setEmail(prestador.email());
+        entity.setSenhaHash(prestador.senhaHash());
         entity.setDocumentoNumero(prestador.documento().numero());
         entity.setDocumentoTipo(prestador.documento().tipo().name());
         entity.setPoliticaAntecedenciaMinimaSegundos(prestador.politicaCancelamentoPadrao().antecedenciaMinima().getSeconds());
@@ -31,6 +33,7 @@ public final class PrestadorMapper {
         PoliticaCancelamento politica = new PoliticaCancelamento(
                 Duration.ofSeconds(entity.getPoliticaAntecedenciaMinimaSegundos()),
                 entity.getPoliticaPercentualRetido());
-        return new Prestador(new PrestadorId(entity.getId()), entity.getNome(), entity.getTelefone(), documento, politica);
+        return new Prestador(new PrestadorId(entity.getId()), entity.getNome(), entity.getTelefone(),
+                entity.getEmail(), entity.getSenhaHash(), documento, politica);
     }
 }

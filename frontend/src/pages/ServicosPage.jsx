@@ -1,33 +1,26 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import { api } from '../api/client';
 
 export default function ServicosPage() {
-  const [prestadores, setPrestadores] = useState([]);
-  const [prestadorId, setPrestadorId] = useState('');
+  const { prestador } = useAuth();
   const [servicos, setServicos] = useState([]);
   const [form, setForm] = useState({ nome: '', duracaoMinutos: 30, preco: '', percentualSinal: 0 });
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(false);
 
-  useEffect(() => {
-    api.get('/api/prestadores').then(setPrestadores).catch((e) => setErro(e.message));
-  }, []);
-
-  async function carregarServicos(id) {
-    if (!id) {
-      setServicos([]);
-      return;
-    }
+  async function carregarServicos() {
     try {
-      setServicos(await api.get(`/api/servicos?prestadorId=${id}`));
+      setServicos(await api.get(`/api/servicos?prestadorId=${prestador.prestadorId}`));
     } catch (e) {
       setErro(e.message);
     }
   }
 
   useEffect(() => {
-    carregarServicos(prestadorId);
-  }, [prestadorId]);
+    carregarServicos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -35,14 +28,13 @@ export default function ServicosPage() {
     setCarregando(true);
     try {
       await api.post('/api/servicos', {
-        prestadorId,
         nome: form.nome,
         duracaoMinutos: Number(form.duracaoMinutos),
         preco: Number(form.preco),
         percentualSinal: Number(form.percentualSinal),
       });
       setForm({ nome: '', duracaoMinutos: 30, preco: '', percentualSinal: 0 });
-      await carregarServicos(prestadorId);
+      await carregarServicos();
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -52,64 +44,50 @@ export default function ServicosPage() {
 
   return (
     <div>
-      <h1>Serviços</h1>
+      <h1>Meus serviços</h1>
 
-      <label>
-        Prestador
-        <select value={prestadorId} onChange={(e) => setPrestadorId(e.target.value)}>
-          <option value="">Selecione...</option>
-          {prestadores.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nome}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {prestadorId && (
-        <form onSubmit={handleSubmit} className="form">
-          <label>
-            Nome
-            <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
-          </label>
-          <label>
-            Duração (min)
-            <input
-              type="number"
-              min="1"
-              value={form.duracaoMinutos}
-              onChange={(e) => setForm({ ...form, duracaoMinutos: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            Preço (R$)
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.preco}
-              onChange={(e) => setForm({ ...form, preco: e.target.value })}
-              required
-            />
-          </label>
-          <label>
-            Sinal (%)
-            <input
-              type="number"
-              step="1"
-              min="0"
-              max="100"
-              value={form.percentualSinal}
-              onChange={(e) => setForm({ ...form, percentualSinal: e.target.value })}
-              required
-            />
-          </label>
-          <button type="submit" disabled={carregando}>
-            Cadastrar
-          </button>
-        </form>
-      )}
+      <form onSubmit={handleSubmit} className="form">
+        <label>
+          Nome
+          <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
+        </label>
+        <label>
+          Duração (min)
+          <input
+            type="number"
+            min="1"
+            value={form.duracaoMinutos}
+            onChange={(e) => setForm({ ...form, duracaoMinutos: e.target.value })}
+            required
+          />
+        </label>
+        <label>
+          Preço (R$)
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={form.preco}
+            onChange={(e) => setForm({ ...form, preco: e.target.value })}
+            required
+          />
+        </label>
+        <label>
+          Sinal (%)
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="100"
+            value={form.percentualSinal}
+            onChange={(e) => setForm({ ...form, percentualSinal: e.target.value })}
+            required
+          />
+        </label>
+        <button type="submit" disabled={carregando}>
+          Cadastrar
+        </button>
+      </form>
 
       {erro && <p className="erro">{erro}</p>}
 

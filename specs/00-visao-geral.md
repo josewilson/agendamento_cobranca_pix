@@ -10,8 +10,9 @@ Plataforma de agendamento para prestadores de serviço (clínicas, barbearias, e
 - Políticas de cancelamento e cobrança de sinal.
 - Bloqueio de agenda por histórico de no-show.
 - Integração com gateway de pagamento via abstração (porta `GatewayDePagamento`), trocável entre Asaas/Mercado Pago/Efí sem alterar casos de uso.
-- Notificações multicanal (WhatsApp, e-mail, SMS) via adapter — **planejado, não implementado** (ver `04-roadmap.md`).
-- Sincronização com Google Calendar — **planejado, não implementado** (ver `04-roadmap.md`).
+- Notificações multicanal (WhatsApp, e-mail, SMS) via adapter — entregue (ver `04-roadmap.md`).
+- Sincronização com Google Calendar — entregue (ver `04-roadmap.md`).
+- Login simples de Prestador (sessão via cookie) — entregue; `Cliente` continua sem login por decisão de escopo (ver `04-roadmap.md`).
 
 ## Stack técnico
 
