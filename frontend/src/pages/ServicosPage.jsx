@@ -120,7 +120,6 @@ export default function ServicosPage() {
             <th>Duração</th>
             <th>Preço</th>
             <th>Sinal</th>
-            <th>Id</th>
           </tr>
         </thead>
         <tbody>
@@ -130,9 +129,6 @@ export default function ServicosPage() {
               <td>{s.duracaoMinutos} min</td>
               <td>R$ {s.preco}</td>
               <td>{s.percentualSinal}%</td>
-              <td>
-                <code>{s.id}</code>
-              </td>
             </tr>
           ))}
         </tbody>

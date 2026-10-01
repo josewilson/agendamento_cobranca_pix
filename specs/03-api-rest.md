@@ -40,7 +40,11 @@ Cadastra um cliente. Executa `CadastrarClienteUseCase`.
 { "id": "uuid", "nome": "Maria Silva", "email": "maria@exemplo.com", "telefone": "11987654321",
   "documentoNumero": "52998224725", "documentoTipo": "CPF", "quantidadeNoShow": 0 }
 ```
-**400** se email/telefone/documento inválidos (validação de `Contato`/`DocumentoFiscal`). Não há endpoint de listagem — o id retornado na criação é a única forma de referenciar o cliente depois (ex.: ao criar um agendamento).
+**400** se email/telefone/documento inválidos (validação de `Contato`/`DocumentoFiscal`).
+
+## `GET /api/clientes`
+
+Lista todos os clientes cadastrados. Executa `ListarClientesUseCase`. **200 OK**, array de `ClienteResponse`. Existe especificamente para o frontend poder oferecer um `<select>` de clientes por nome na tela de novo agendamento — a regra do projeto é que nenhum id de cadastro aparece como texto na UI (ver `CLAUDE.md`), então pedir pro usuário colar um UUID não é uma opção.
 
 ## `POST /api/servicos`
 

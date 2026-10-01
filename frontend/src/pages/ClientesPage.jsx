@@ -1,20 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 
 export default function ClientesPage() {
+  const [clientes, setClientes] = useState([]);
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF' });
-  const [clienteCriado, setClienteCriado] = useState(null);
+  const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(false);
+
+  async function carregar() {
+    try {
+      setClientes(await api.get('/api/clientes'));
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
+
+  useEffect(() => {
+    carregar();
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setErro(null);
+    setSucesso(false);
     setCarregando(true);
     try {
-      const cliente = await api.post('/api/clientes', form);
-      setClienteCriado(cliente);
+      await api.post('/api/clientes', form);
       setForm({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF' });
+      setSucesso(true);
+      await carregar();
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -65,12 +80,26 @@ export default function ClientesPage() {
       </form>
 
       {erro && <p className="erro">{erro}</p>}
+      {sucesso && <div className="aviso-sucesso">Cliente cadastrado! Já aparece na lista abaixo e na tela de novo agendamento.</div>}
 
-      {clienteCriado && (
-        <div className="aviso-sucesso">
-          Cliente cadastrado! Copie o id para usar no agendamento: <code>{clienteCriado.id}</code>
-        </div>
-      )}
+      <table className="tabela">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Telefone</th>
+          </tr>
+        </thead>
+        <tbody>
+          {clientes.map((c) => (
+            <tr key={c.id}>
+              <td>{c.nome}</td>
+              <td>{c.email}</td>
+              <td>{c.telefone}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

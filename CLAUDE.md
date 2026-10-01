@@ -10,6 +10,14 @@ Leia `specs/` (`00-visao-geral.md` até `04-roadmap.md`) no início de toda sess
 
 Agendamento com cobrança via Pix — uma plataforma de agendamento para prestadores de serviço (clínicas, barbearias, estúdios) com cobrança de sinal/multa de cancelamento via Pix. Projeto de portfólio em arquitetura hexagonal, Java 21 + Spring Boot 3.5.11.
 
+## Regra inegociável: ids e senhas nunca aparecem
+
+Pedido explícito do usuário, vale para toda mudança futura neste projeto, sem exceção:
+
+- **Nenhum id de cadastro (UUID de `Prestador`/`Cliente`/`Servico`/`Agendamento`) pode aparecer como texto visível em nenhuma tela do frontend** — nem em tabela, nem em mensagem de sucesso, nem em "copie este id". Por isso `PrestadoresPage`/`ServicosPage` não têm coluna "Id", `ClientesPage` não mostra o id após cadastrar, e as telas de agendamento não exibem o id como texto. Onde um id é tecnicamente necessário (seleção de prestador/serviço/cliente, navegação), ele vive só como `value` de `<option>` ou parâmetro de rota na URL — nunca como conteúdo renderizado na página. `GET /api/clientes` existe justamente para isso: a tela de novo agendamento usa um `<select>` de clientes (por nome) em vez de pedir pra colar um UUID.
+- **Nenhuma senha/credencial real pode subir para o repositório.** Já é assim para toda integração externa — `ASAAS_API_KEY`, `MERCADOPAGO_ACCESS_TOKEN`, `GOOGLE_CALENDAR_CREDENTIALS`, `TWILIO_AUTH_TOKEN`, `SMTP_PASSWORD` — sempre variável de ambiente com valor vazio por padrão em `application.yml`, nunca hardcoded. `frontend/.env` (com a URL da API, nenhum segredo) está no `.gitignore`; só `frontend/.env.example` é versionado. Exceção consciente: `docker-compose.yml`/`application.yml` têm a senha do Postgres local (`agendamento`/`agendamento`) em texto plano — é um container descartável que só existe em `localhost`, não uma credencial real; se isso também precisar sumir do repo, trocar por variável de ambiente é a mesma receita das outras integrações.
+- Ao adicionar qualquer tela, endpoint ou integração nova: antes de mostrar algo na UI ou de commitar uma config, pare e pergunte "isso é um id de cadastro ou uma senha/token?" — se for, não aparece na tela e não vai pro git.
+
 ## Comandos
 
 Não há `mvn` nem Maven wrapper (`mvnw`) no PATH deste ambiente, e `.mvn/` não tem o jar do wrapper. Use as ferramentas MCP do IntelliJ:
@@ -32,7 +40,7 @@ Projeto React + Vite + JavaScript puro + CSS puro, **completamente separado do b
 
 - Rodar: `cd frontend && npm install && npm run dev` — sobe em `http://localhost:5173`. Precisa do backend rodando em `http://localhost:8080` (`docker-compose up -d` + `AgendamentoApplication`, perfil padrão) com CORS liberado para essa origem (já é o padrão em `application.yml`, `app.cors.allowed-origins`).
 - `src/api/client.js` é o único ponto que fala com a API (`fetch` nativo, sem axios) — lê a URL base de `VITE_API_BASE_URL` (`.env`, padrão `http://localhost:8080`) e já traduz `ErrorResponse.mensagem` do backend em exceções JS.
-- Sem endpoint de listagem para clientes — o id retornado ao cadastrar é a única referência; a tela de novo agendamento pede esse id colado manualmente.
+- Prestador/serviço/cliente são sempre escolhidos por `<select>` (nome, não id) — `GET /api/clientes` existe só pra isso. Nenhuma tela mostra um id como texto (ver "Regra inegociável" acima).
 - `npm audit` acusa vulnerabilidades moderadas em `esbuild`/`vite` (exposição do dev server) e `react-router` (bypass de redirect; o aviso de hidratação SSR não se aplica — este projeto não usa SSR). Corrigir exige major bumps (`vite@8`, `react-router-dom@7`) — ver `specs/04-roadmap.md`.
 
 ## Arquitetura

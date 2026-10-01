@@ -70,7 +70,6 @@ export default function PrestadoresPage() {
           <tr>
             <th>Nome</th>
             <th>Documento</th>
-            <th>Id</th>
           </tr>
         </thead>
         <tbody>
@@ -79,9 +78,6 @@ export default function PrestadoresPage() {
               <td>{p.nome}</td>
               <td>
                 {p.documentoTipo}: {p.documentoNumero}
-              </td>
-              <td>
-                <code>{p.id}</code>
               </td>
             </tr>
           ))}

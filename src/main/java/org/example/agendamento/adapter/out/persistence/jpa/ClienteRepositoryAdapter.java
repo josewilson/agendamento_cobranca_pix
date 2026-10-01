@@ -8,6 +8,7 @@ import org.example.agendamento.domain.model.cliente.ClienteId;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -28,5 +29,10 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
     @Override
     public Optional<Cliente> buscarPorId(ClienteId id) {
         return jpaRepository.findById(id.valor()).map(ClienteMapper::paraDominio);
+    }
+
+    @Override
+    public List<Cliente> buscarTodos() {
+        return jpaRepository.findAll().stream().map(ClienteMapper::paraDominio).toList();
     }
 }

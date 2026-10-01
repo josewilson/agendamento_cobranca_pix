@@ -1,6 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
 import org.example.agendamento.application.port.in.CadastrarClienteUseCase;
+import org.example.agendamento.application.port.in.ListarClientesUseCase;
 import org.example.agendamento.domain.model.cliente.Cliente;
 import org.example.agendamento.domain.model.cliente.ClienteId;
 import org.example.agendamento.domain.model.shared.Contato;
@@ -11,8 +12,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +29,8 @@ class ClienteControllerTest {
 
     @MockitoBean
     private CadastrarClienteUseCase cadastrarClienteUseCase;
+    @MockitoBean
+    private ListarClientesUseCase listarClientesUseCase;
 
     @Test
     void deveCadastrarClienteERetornar201() throws Exception {
@@ -66,5 +72,17 @@ class ClienteControllerTest {
                         .contentType("application/json")
                         .content(corpo))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveListarClientesERetornar200() throws Exception {
+        Cliente cliente = new Cliente(ClienteId.novo(), "Maria Silva",
+                new Contato("maria@exemplo.com", "11987654321"), DocumentoFiscal.cpf("111.444.777-35"));
+        given(listarClientesUseCase.executar()).willReturn(List.of(cliente));
+
+        mockMvc.perform(get("/api/clientes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(cliente.id().valor().toString()))
+                .andExpect(jsonPath("$[0].nome").value("Maria Silva"));
     }
 }

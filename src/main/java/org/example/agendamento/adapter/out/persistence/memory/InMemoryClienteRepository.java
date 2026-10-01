@@ -6,6 +6,8 @@ import org.example.agendamento.domain.model.cliente.ClienteId;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,5 +27,10 @@ public class InMemoryClienteRepository implements ClienteRepository {
     @Override
     public Optional<Cliente> buscarPorId(ClienteId id) {
         return Optional.ofNullable(clientes.get(id));
+    }
+
+    @Override
+    public List<Cliente> buscarTodos() {
+        return new ArrayList<>(clientes.values());
     }
 }

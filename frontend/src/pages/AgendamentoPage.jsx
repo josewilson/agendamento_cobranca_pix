@@ -49,9 +49,6 @@ export default function AgendamentoPage() {
     <div>
       <h1>Agendamento</h1>
       <p>
-        Id: <code>{agendamento.id}</code>
-      </p>
-      <p>
         Status: <strong>{agendamento.status}</strong>
       </p>
       <p>Início: {new Date(agendamento.inicio).toLocaleString('pt-BR')}</p>

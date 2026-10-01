@@ -6,6 +6,7 @@ export default function NovoAgendamentoPage() {
   const navigate = useNavigate();
   const [prestadores, setPrestadores] = useState([]);
   const [servicos, setServicos] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [prestadorId, setPrestadorId] = useState('');
   const [servicoId, setServicoId] = useState('');
   const [clienteId, setClienteId] = useState('');
@@ -16,6 +17,7 @@ export default function NovoAgendamentoPage() {
 
   useEffect(() => {
     api.get('/api/prestadores').then(setPrestadores).catch((e) => setErro(e.message));
+    api.get('/api/clientes').then(setClientes).catch((e) => setErro(e.message));
   }, []);
 
   useEffect(() => {
@@ -92,13 +94,15 @@ export default function NovoAgendamentoPage() {
         </label>
 
         <label>
-          Cliente (id)
-          <input
-            value={clienteId}
-            onChange={(e) => setClienteId(e.target.value)}
-            placeholder="cole o id do cliente cadastrado"
-            required
-          />
+          Cliente
+          <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
+            <option value="">Selecione...</option>
+            {clientes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label>
@@ -117,9 +121,6 @@ export default function NovoAgendamentoPage() {
         <div className="aviso-sucesso">
           <p>
             Agendamento criado! Status: <strong>{resultado.agendamento.status}</strong>
-          </p>
-          <p>
-            Id: <code>{resultado.agendamento.id}</code>
           </p>
           {resultado.cobranca && (
             <div>
