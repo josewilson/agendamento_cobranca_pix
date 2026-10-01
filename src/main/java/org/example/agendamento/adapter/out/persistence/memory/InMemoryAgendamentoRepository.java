@@ -8,6 +8,7 @@ import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +47,14 @@ public class InMemoryAgendamentoRepository implements AgendamentoRepository {
     public List<Agendamento> buscarTodosPendentesPagamento() {
         return agendamentos.values().stream()
                 .filter(agendamento -> agendamento.status() == StatusAgendamento.PENDENTE_PAGAMENTO)
+                .toList();
+    }
+
+    @Override
+    public List<Agendamento> buscarPorPrestador(PrestadorId prestadorId) {
+        return agendamentos.values().stream()
+                .filter(agendamento -> agendamento.prestadorId().equals(prestadorId))
+                .sorted(Comparator.comparing(agendamento -> agendamento.periodo().inicio()))
                 .toList();
     }
 }

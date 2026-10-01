@@ -121,6 +121,27 @@ h1 {
   color: var(--cor-texto-suave);
 }
 
+.filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  max-width: 360px;
+  margin-bottom: 1.5rem;
+}
+
+.filtro select {
+  padding: 0.65rem 0.8rem;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--cor-texto);
+  background: #fbfaff;
+}
+
 .form input,
 .form select {
   padding: 0.65rem 0.8rem;

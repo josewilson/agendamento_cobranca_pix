@@ -11,6 +11,8 @@ import org.example.agendamento.application.port.in.ConsultarAgendamentoQuery;
 import org.example.agendamento.application.port.in.ConsultarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.CriarAgendamentoCommand;
 import org.example.agendamento.application.port.in.CriarAgendamentoUseCase;
+import org.example.agendamento.application.port.in.ListarAgendamentosPorPrestadorQuery;
+import org.example.agendamento.application.port.in.ListarAgendamentosPorPrestadorUseCase;
 import org.example.agendamento.application.port.in.MarcarNoShowCommand;
 import org.example.agendamento.application.port.in.MarcarNoShowUseCase;
 import org.example.agendamento.application.port.in.ResultadoCriacaoAgendamento;
@@ -27,9 +29,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,15 +44,18 @@ public class AgendamentoController {
     private final ConsultarAgendamentoUseCase consultarAgendamentoUseCase;
     private final CancelarAgendamentoUseCase cancelarAgendamentoUseCase;
     private final MarcarNoShowUseCase marcarNoShowUseCase;
+    private final ListarAgendamentosPorPrestadorUseCase listarAgendamentosPorPrestadorUseCase;
 
     public AgendamentoController(CriarAgendamentoUseCase criarAgendamentoUseCase,
                                   ConsultarAgendamentoUseCase consultarAgendamentoUseCase,
                                   CancelarAgendamentoUseCase cancelarAgendamentoUseCase,
-                                  MarcarNoShowUseCase marcarNoShowUseCase) {
+                                  MarcarNoShowUseCase marcarNoShowUseCase,
+                                  ListarAgendamentosPorPrestadorUseCase listarAgendamentosPorPrestadorUseCase) {
         this.criarAgendamentoUseCase = criarAgendamentoUseCase;
         this.consultarAgendamentoUseCase = consultarAgendamentoUseCase;
         this.cancelarAgendamentoUseCase = cancelarAgendamentoUseCase;
         this.marcarNoShowUseCase = marcarNoShowUseCase;
+        this.listarAgendamentosPorPrestadorUseCase = listarAgendamentosPorPrestadorUseCase;
     }
 
     @PostMapping
@@ -68,6 +75,12 @@ public class AgendamentoController {
     public AgendamentoResponse consultar(@PathVariable UUID id) {
         Agendamento agendamento = consultarAgendamentoUseCase.executar(new ConsultarAgendamentoQuery(new AgendamentoId(id)));
         return AgendamentoResponse.de(agendamento);
+    }
+
+    @GetMapping
+    public List<AgendamentoResponse> listarPorPrestador(@RequestParam UUID prestadorId) {
+        ListarAgendamentosPorPrestadorQuery query = new ListarAgendamentosPorPrestadorQuery(new PrestadorId(prestadorId));
+        return listarAgendamentosPorPrestadorUseCase.executar(query).stream().map(AgendamentoResponse::de).toList();
     }
 
     @PostMapping("/{id}/cancelar")

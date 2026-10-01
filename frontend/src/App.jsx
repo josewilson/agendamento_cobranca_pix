@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import NavBar from './components/NavBar.jsx';
+import AgendaPage from './pages/AgendaPage.jsx';
 import PrestadoresPage from './pages/PrestadoresPage.jsx';
 import ServicosPage from './pages/ServicosPage.jsx';
 import ClientesPage from './pages/ClientesPage.jsx';
@@ -12,7 +13,8 @@ export default function App() {
       <NavBar />
       <main className="container">
         <Routes>
-          <Route path="/" element={<Navigate to="/prestadores" replace />} />
+          <Route path="/" element={<Navigate to="/agenda" replace />} />
+          <Route path="/agenda" element={<AgendaPage />} />
           <Route path="/prestadores" element={<PrestadoresPage />} />
           <Route path="/servicos" element={<ServicosPage />} />
           <Route path="/clientes" element={<ClientesPage />} />

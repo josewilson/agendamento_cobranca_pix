@@ -49,4 +49,11 @@ public class AgendamentoRepositoryAdapter implements AgendamentoRepository {
                 .map(AgendamentoMapper::paraDominio)
                 .toList();
     }
+
+    @Override
+    public List<Agendamento> buscarPorPrestador(PrestadorId prestadorId) {
+        return jpaRepository.findByPrestadorIdOrderByPeriodoInicioAsc(prestadorId.valor()).stream()
+                .map(AgendamentoMapper::paraDominio)
+                .toList();
+    }
 }

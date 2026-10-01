@@ -4,6 +4,7 @@ import org.example.agendamento.application.exception.RecursoNaoEncontradoExcepti
 import org.example.agendamento.application.port.in.CancelarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.ConsultarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.CriarAgendamentoUseCase;
+import org.example.agendamento.application.port.in.ListarAgendamentosPorPrestadorUseCase;
 import org.example.agendamento.application.port.in.MarcarNoShowUseCase;
 import org.example.agendamento.application.port.in.ResultadoCriacaoAgendamento;
 import org.example.agendamento.domain.exception.ConflitoDeHorarioException;
@@ -48,6 +49,8 @@ class AgendamentoControllerTest {
     private CancelarAgendamentoUseCase cancelarAgendamentoUseCase;
     @MockitoBean
     private MarcarNoShowUseCase marcarNoShowUseCase;
+    @MockitoBean
+    private ListarAgendamentosPorPrestadorUseCase listarAgendamentosPorPrestadorUseCase;
 
     private static Agendamento agendamentoExemplo() {
         Instant agora = Instant.parse("2026-09-30T12:00:00Z");
@@ -153,6 +156,16 @@ class AgendamentoControllerTest {
     void deveMarcarNoShowERetornar204() throws Exception {
         mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deveListarAgendamentosPorPrestadorERetornar200() throws Exception {
+        Agendamento agendamento = agendamentoExemplo();
+        given(listarAgendamentosPorPrestadorUseCase.executar(any())).willReturn(java.util.List.of(agendamento));
+
+        mockMvc.perform(get("/api/agendamentos").param("prestadorId", agendamento.prestadorId().valor().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(agendamento.id().valor().toString()));
     }
 
     private static final String UUID_EXEMPLO = "11111111-1111-1111-1111-111111111111";

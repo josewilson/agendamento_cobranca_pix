@@ -11,4 +11,6 @@ public interface AgendamentoJpaRepository extends JpaRepository<AgendamentoJpaEn
     List<AgendamentoJpaEntity> findByPrestadorIdAndStatusIn(UUID prestadorId, List<String> status);
 
     List<AgendamentoJpaEntity> findByStatus(String status);
+
+    List<AgendamentoJpaEntity> findByPrestadorIdOrderByPeriodoInicioAsc(UUID prestadorId);
 }

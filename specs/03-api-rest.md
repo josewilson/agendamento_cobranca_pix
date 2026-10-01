@@ -102,6 +102,10 @@ Consulta um agendamento. Executa `ConsultarAgendamentoUseCase`.
 
 **200 OK** (`AgendamentoResponse`, mesmo formato do objeto `agendamento` acima). **404** se não existir.
 
+## `GET /api/agendamentos?prestadorId={uuid}`
+
+Lista os agendamentos de um prestador (qualquer status, inclusive histórico). Executa `ListarAgendamentosPorPrestadorUseCase`. **200 OK**, array de `AgendamentoResponse` ordenado por `inicio` ascendente (vazio se o prestador não tiver agendamentos ou não existir — não há 404, mesmo padrão de `GET /api/servicos`). É a tela de agenda do frontend: por causa da regra de nunca mostrar id na UI (ver `CLAUDE.md`), sem este endpoint não havia nenhum jeito de voltar a encontrar um agendamento depois de sair da tela em que ele foi criado.
+
 ## `POST /api/agendamentos/{id}/cancelar`
 
 Cancela um agendamento. Executa `CancelarAgendamentoUseCase`.

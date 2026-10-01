@@ -115,4 +115,20 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
 
         assertThat(pendentes).extracting(Agendamento::id).contains(pendente.id());
     }
+
+    @Test
+    void deveBuscarPorPrestadorEmOrdemCronologicaIncluindoCancelados() {
+        Instant agora = Instant.now();
+        Periodo periodoTarde = new Periodo(agora.plus(Duration.ofDays(3)), agora.plus(Duration.ofDays(3)).plus(Duration.ofMinutes(30)));
+        Periodo periodoCedo = new Periodo(agora.plus(Duration.ofDays(1)), agora.plus(Duration.ofDays(1)).plus(Duration.ofMinutes(30)));
+        Agendamento maisTarde = novoAgendamento(agora, periodoTarde, Dinheiro.ZERO);
+        Agendamento maisCedo = novoAgendamento(agora, periodoCedo, Dinheiro.ZERO);
+        maisCedo.cancelar(agora);
+        agendamentoRepository.salvar(maisTarde);
+        agendamentoRepository.salvar(maisCedo);
+
+        List<Agendamento> doPrestador = agendamentoRepository.buscarPorPrestador(prestador.id());
+
+        assertThat(doPrestador).extracting(Agendamento::id).containsExactly(maisCedo.id(), maisTarde.id());
+    }
 }

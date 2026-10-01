@@ -54,7 +54,13 @@ Os dois controllers só ficam ativos quando o gateway correspondente está confi
 
 **Query:** `ConsultarAgendamentoQuery(agendamentoId)`
 
-Busca o agendamento por ID — `RecursoNaoEncontradoException` se não existir. Único caso de uso de leitura pura; existe para servir o `GET /api/agendamentos/{id}`.
+Busca o agendamento por ID — `RecursoNaoEncontradoException` se não existir. Existe para servir o `GET /api/agendamentos/{id}`.
+
+## ListarAgendamentosPorPrestadorUseCase
+
+**Query:** `ListarAgendamentosPorPrestadorQuery(prestadorId)`
+
+Busca todos os agendamentos do prestador (`AgendamentoRepository.buscarPorPrestador`, distinto de `buscarAtivosPorPrestador` usado pelo `VerificadorDeConflito` — este inclui qualquer status, inclusive `CANCELADO`/`NO_SHOW`/histórico), ordenados por `periodo.inicio` ascendente. Sem 404 se o prestador não existir ou não tiver nenhum agendamento — lista vazia é resposta válida, mesmo padrão de `ListarServicosPorPrestadorUseCase`. Existe para servir o `GET /api/agendamentos?prestadorId=`, a tela de agenda do frontend — antes da Fase 4 (item "listagem/agenda") não havia nenhum jeito de ver os agendamentos de um prestador de uma vez, só consultar um por um pelo id (que, pela regra de nunca mostrar id na tela, nem tinha como descobrir depois de sair da tela de criação).
 
 ## Notificações (reação a eventos, não um caso de uso próprio)
 
