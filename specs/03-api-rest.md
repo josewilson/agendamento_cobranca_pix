@@ -4,9 +4,11 @@ Implementada em `src/main/java/org/example/agendamento/adapter/in/web/`. Base pa
 
 Documentação interativa via `springdoc-openapi-starter-webmvc-ui` em `/swagger-ui.html` (`/v3/api-docs` para o JSON cru) — permite testar todos os endpoints direto do navegador. Com o perfil `dev` ativo, `DevDataSeeder` (`adapter/in/seed/`) popula um prestador, cliente e serviço de IDs fixos no startup (logados no console), um atalho rápido além dos endpoints de cadastro abaixo.
 
-**CORS**: liberado para `app.cors.allowed-origins` (`WebConfig`, `adapter/in/web/`), por padrão só `http://localhost:5173` (o frontend separado em `frontend/`, ver `CLAUDE.md`), com `allowCredentials(true)` — necessário para o cookie de sessão do login (ver abaixo) ser enviado nas chamadas entre origens diferentes. Sem isso o browser bloqueia as chamadas antes de chegarem aos controllers.
+**CORS**: liberado para `app.cors.allowed-origins` (`SecurityConfig`, `adapter/in/web/security/` — único lugar que configura CORS desde que `WebConfig` foi removido nesta sessão, ver `specs/04-roadmap.md`), por padrão só `http://localhost:5173` (o frontend separado em `frontend/`, ver `CLAUDE.md`), com `allowCredentials(true)` — necessário para o cookie de sessão do login (ver abaixo) ser enviado nas chamadas entre origens diferentes. Sem isso o browser bloqueia as chamadas antes de chegarem aos controllers.
 
-**Autenticação**: login simples de `Prestador` via sessão (cookie `JSESSIONID`), ver seção `/api/auth/*` abaixo. `Cliente` continua sem login (decisão de escopo). A maior parte da API é pública (fluxo de reserva: listar prestador/serviço, cadastrar cliente, criar/consultar/cancelar/marcar no-show um agendamento, webhooks); só `GET /api/agendamentos` e `POST /api/servicos` exigem estar autenticado como o `Prestador` dono dos dados — endpoints sem login nessas rotas retornam **401**.
+**Autenticação**: login simples de `Prestador` via sessão (cookie `JSESSIONID`), ver seção `/api/auth/*` abaixo. `Cliente` continua sem login (decisão de escopo, risco aceito conscientemente — ver `specs/02-casos-de-uso.md`). A maior parte da API é pública (fluxo de reserva: listar prestador/serviço, cadastrar cliente, criar/consultar/cancelar/marcar no-show um agendamento, webhooks); `GET /api/agendamentos`, `POST`/`PUT`/`DELETE /api/servicos` e `PUT /api/prestadores/{id}` exigem estar autenticado como o `Prestador` dono dos dados — endpoints sem login nessas rotas retornam **401**.
+
+**CSRF**: habilitado via `CookieCsrfTokenRepository` (cookie `XSRF-TOKEN`, não `HttpOnly` — precisa ser legível por JS), exceto para `/api/webhooks/**`. Qualquer chamada que não seja `GET` precisa do header `X-XSRF-TOKEN` com o valor desse cookie — o frontend já faz isso automaticamente (`frontend/src/api/client.js`). Sem o header (ou com um valor que não bate com o cookie), a chamada é rejeitada antes de chegar ao controller.
 
 ## `POST /api/prestadores`
 
@@ -27,6 +29,16 @@ Cadastra um prestador — é também o cadastro (sign-up) de login, já que só 
 ## `GET /api/prestadores`
 
 Lista todos os prestadores cadastrados. Executa `ListarPrestadoresUseCase`. **200 OK**, array de `PrestadorResponse`. Público — a tela de novo agendamento (fluxo de reserva, sem login) precisa listar prestadores para o cliente escolher.
+
+## `PUT /api/prestadores/{id}`
+
+Edita o próprio perfil do prestador autenticado. Executa `AtualizarPrestadorUseCase`. **Exige login** — `{id}` precisa bater com o prestador da sessão.
+
+**Request** (`AtualizarPrestadorRequest`): `{ "nome": "Clinica Bem-Estar Ltda", "telefone": "11999998888" }`
+
+**200 OK** (`PrestadorResponse`). Só `nome`/`telefone` são editáveis por aqui — documento, email e senha permanecem imutáveis (trocar identidade de login ou documento fiscal exigiria um fluxo próprio, fora de escopo).
+
+**Erros:** `401` (sem login), `403` (`{id}` não é o prestador da sessão), `404` (não existe), `400` (nome vazio ou telefone em formato inválido). Não existe `DELETE /api/prestadores/{id}` — excluir a própria conta logada envolveria invalidar a sessão e decidir o que fazer com serviços/agendamentos já vinculados, adiado conscientemente (ver `specs/04-roadmap.md`).
 
 ## `POST /api/auth/login`
 
@@ -64,6 +76,18 @@ Cadastra um cliente. Executa `CadastrarClienteUseCase`.
 
 Lista todos os clientes cadastrados. Executa `ListarClientesUseCase`. **200 OK**, array de `ClienteResponse`. Existe especificamente para o frontend poder oferecer um `<select>` de clientes por nome na tela de novo agendamento — a regra do projeto é que nenhum id de cadastro aparece como texto na UI (ver `CLAUDE.md`), então pedir pro usuário colar um UUID não é uma opção.
 
+## `PUT /api/clientes/{id}`
+
+Edita nome/email/telefone de um cliente. Executa `AtualizarClienteUseCase`. Público (mesmo escopo de sempre do `Cliente`).
+
+**Request** (`AtualizarClienteRequest`, todos `@NotBlank`): `{ "nome": "Maria S. Silva", "email": "maria.nova@exemplo.com", "telefone": "11999998888" }`
+
+**200 OK** (`ClienteResponse`, mantém `documentoNumero`/`documentoTipo`/`quantidadeNoShow` intactos — documento é imutável). **Erros:** `404`, `400`, `409` (email/telefone resultando em conflito, raro já que só documento tem constraint única hoje).
+
+## `DELETE /api/clientes/{id}`
+
+Exclui um cliente. Executa `ExcluirClienteUseCase`. Público. **204 No Content**. **404** se não existir. **409** se houver agendamento vinculado (constraint de chave estrangeira — `DataIntegrityViolationException`, ver tabela de erros abaixo).
+
 ## `POST /api/servicos`
 
 Cadastra um serviço vinculado ao prestador autenticado. Executa `CadastrarServicoUseCase`. **Exige login** — `prestadorId` não vem mais no corpo da requisição, o controller pega do `@AuthenticationPrincipal` (sessão), para um prestador não poder cadastrar serviço em nome de outro.
@@ -81,7 +105,19 @@ Cadastra um serviço vinculado ao prestador autenticado. Executa `CadastrarServi
 
 ## `GET /api/servicos?prestadorId={uuid}`
 
-Lista os serviços de um prestador. Executa `ListarServicosPorPrestadorUseCase`. **200 OK**, array de `ServicoResponse` (vazio se o prestador não tiver serviços ou não existir — não há 404 aqui, uma lista vazia é uma resposta válida).
+Lista os serviços de um prestador. Executa `ListarServicosPorPrestadorUseCase`. **200 OK**, array de `ServicoResponse` (vazio se o prestador não tiver serviços ou não existir — não há 404 aqui, uma lista vazia é uma resposta válida). Público — o fluxo de reserva (sem login) precisa listar os serviços de um prestador pra montar a tela de novo agendamento.
+
+## `PUT /api/servicos/{id}`
+
+Edita um serviço do prestador autenticado. Executa `AtualizarServicoUseCase`. **Exige login** — o serviço precisa pertencer ao prestador da sessão.
+
+**Request** (`CadastrarServicoRequest`, mesmo formato do cadastro): `{ "nome": "Massagem relaxante", "duracaoMinutos": 60, "preco": 150.00, "percentualSinal": 30 }`
+
+**200 OK** (`ServicoResponse`). Agendamentos já criados com esse serviço não mudam — cada um guarda sua própria cópia de `valorServico`/política no momento da criação. **Erros:** `401` (sem login), `403` (serviço pertence a outro prestador), `404` (não existe), `400` (validação de domínio).
+
+## `DELETE /api/servicos/{id}`
+
+Exclui um serviço do prestador autenticado. Executa `ExcluirServicoUseCase`. **Exige login**, mesma checagem de dono do `PUT`. **204 No Content**. **Erros:** `401`, `403`, `404`.
 
 ## `POST /api/agendamentos`
 
@@ -192,6 +228,10 @@ Diferente do Asaas, o corpo **não traz o status do pagamento** — só o id. O 
 
 **204 No Content** com assinatura válida.
 
+## `GET /actuator/health`
+
+Liveness/readiness para orquestrador ou monitoramento. **200 OK**: `{ "status": "UP" }` (ou `"DOWN"`). Único endpoint do Actuator exposto (`management.endpoints.web.exposure.include: health`) — os demais (`env`, `beans`, etc.) vazam detalhe de implementação sem necessidade num projeto sem autenticação de operador separada. `show-details: never` pelo mesmo motivo. Público (`permitAll` em `SecurityConfig`, senão um orquestrador não autenticado não conseguiria checar a saúde da aplicação). O indicador de saúde do `spring-mail` fica desabilitado (`management.health.mail.enabled: false`) — `spring-boot-starter-mail` registra um health check que tenta conectar no SMTP configurado, mas email é integração opcional aqui (a aplicação sobe e funciona normalmente sem SMTP configurado), então um SMTP fora do ar não deveria derrubar o `/health` da aplicação inteira.
+
 ---
 
 `/api/webhooks/asaas`, `/api/webhooks/mercadopago` e o `/api/webhooks/pagamento` genérico acima são os únicos caminhos que confirmam um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
@@ -203,9 +243,13 @@ Todo erro de caso de uso retorna `ErrorResponse { "mensagem": "..." }`.
 | Exceção | Status |
 |---|---|
 | `RecursoNaoEncontradoException` | 404 |
+| `AcessoNaoAutorizadoException` | 403 |
 | `ConflitoDeHorarioException` | 409 |
 | `TransicaoDeStatusInvalidaException` | 409 |
+| `DataIntegrityViolationException` (constraint única/estrangeira do banco — documento/email duplicado, exclusão com vínculo) | 409, mensagem genérica (qual coluna/valor colidiu é detalhe de implementação do banco) |
 | `IllegalArgumentException` / `IllegalStateException` (validações de domínio) | 400 |
 | `MethodArgumentNotValidException` (Bean Validation) | 400, com `campo: mensagem` por erro de campo |
 
-**401 (sem sessão válida)** vem do `AuthenticationEntryPoint` de `SecurityConfig` (`adapter/in/web/security/`), não do `GlobalExceptionHandler` — corpo no formato padrão do Spring Boot (`{timestamp, status, error, path}`), não `ErrorResponse`, já que é tratado na camada de segurança (antes do `DispatcherServlet`), não num `@ExceptionHandler` de controller.
+**401 (sem sessão válida)** vem do `AuthenticationEntryPoint` de `SecurityConfig` (`adapter/in/web/security/`), não do `GlobalExceptionHandler` — corpo no formato padrão do Spring Boot (`{timestamp, status, error, path}`), não `ErrorResponse`, já que é tratado na camada de segurança (antes do `DispatcherServlet`), não num `@ExceptionHandler` de controller. Pelo mesmo motivo, uma falha de CSRF (header `X-XSRF-TOKEN` ausente ou incorreto) também passa pelo `AuthenticationEntryPoint` quando o chamador é anônimo — Spring Security roteia qualquer `AccessDeniedException` (CSRF incluído) pro entry point de autenticação nesse caso, então aparece como **401**, não 403.
+
+`/error` está liberado em `permitAll` de propósito: sem isso, uma exceção não tratada (e portanto um status 500 de verdade) apareceria como um 401 enganoso, porque o redespacho interno do Tomcat pro `/error` passa pelo filtro de segurança de novo e esbarraria em `anyRequest().authenticated()`.

@@ -7,9 +7,9 @@ Todo o conteúdo deste documento está implementado em `src/main/java/org/exampl
 | Entidade | Responsabilidade |
 |---|---|
 | `Agendamento` | Aggregate root. Reserva de um `Periodo` para um `Cliente`, com um `Prestador`, para um `Servico`. Dona da máquina de estados e das regras de cancelamento/sinal/no-show/expiração. |
-| `Cliente` | Dados de contato + documento + contador de no-shows. Decide se exige sinal obrigatório (`exigeSinalObrigatorio()`). |
-| `Prestador` | Dados de contato + documento + política de cancelamento padrão aplicada aos seus agendamentos. |
-| `Servico` | Nome, duração, preço e percentual de sinal exigido pelo próprio serviço. |
+| `Cliente` | Dados de contato + documento + contador de no-shows. Decide se exige sinal obrigatório (`exigeSinalObrigatorio()`). `atualizarDadosCadastrais(nome, contato)` edita nome/contato mantendo documento e histórico de no-show intactos (documento é imutável — ver `03-api-rest.md`, `PUT /api/clientes/{id}`). Não tem login — ver `02-casos-de-uso.md`, seção "Autenticação do Prestador". |
+| `Prestador` | Dados de contato + documento + política de cancelamento padrão aplicada aos seus agendamentos + credenciais de login (`email` único, `senhaHash` — nunca a senha em texto puro, ver `02-casos-de-uso.md`). `atualizarPerfil(nome, telefone)` edita só esses dois campos; documento/email/senha são imutáveis por essa via (trocar identidade de login ou documento fiscal exigiria um fluxo próprio, fora de escopo). |
+| `Servico` | Nome, duração, preço e percentual de sinal exigido pelo próprio serviço. `atualizarDados(...)` edita todos os quatro campos — agendamentos já criados guardam sua própria cópia de `valorServico`/política no momento da criação, então editar um serviço nunca muda retroativamente um agendamento passado. |
 
 ## Value Objects (imutáveis, `record`, validação no construtor compacto)
 
@@ -17,7 +17,7 @@ Todo o conteúdo deste documento está implementado em `src/main/java/org/exampl
 |---|---|
 | `Periodo` | `fim` deve ser estritamente posterior a `inicio`. `sobrepoe(outro)` usa comparação estrita — dois períodos que apenas se tocam (fim de um == início do outro) **não** conflitam. |
 | `Dinheiro` | Envolve `BigDecimal`, nunca `double`/`float`. Escala sempre normalizada para 2 casas com `RoundingMode.HALF_EVEN` no construtor compacto. Não aceita valores negativos. |
-| `Contato` | E-mail e telefone validados por regex; telefone é normalizado removendo espaços/parênteses/hífen. |
+| `Contato` | E-mail e telefone validados por regex (`domain/model/shared/FormatoContato`, compartilhado com a validação de telefone/email de `Prestador` — os dois precisam da mesma regra de formato, mas `Prestador` não reaproveita este VO, já que telefone de prestador é um campo isolado, sem o par email+telefone que `Contato` representa); telefone é normalizado removendo espaços/parênteses/hífen. |
 | `DocumentoFiscal` | CPF ou CNPJ com validação real de dígito verificador (algoritmo completo, não apenas tamanho). Rejeita sequências de dígitos repetidos (ex. `111.111.111-11`). |
 | `PoliticaCancelamento` | `antecedenciaMinima` (Duration) + `percentualRetido` (0–100). `dentroDaJanelaLivre(inicioAgendamento, agora)` — no limite exato da antecedência mínima, o cancelamento é considerado livre (sem retenção). |
 
