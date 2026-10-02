@@ -16,6 +16,7 @@ import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.example.agendamento.domain.model.servico.Servico;
 import org.example.agendamento.domain.model.servico.ServicoId;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,9 +63,12 @@ public class ServicoController {
     }
 
     @GetMapping
-    public List<ServicoResponse> listarPorPrestador(@RequestParam UUID prestadorId) {
+    public ResponseEntity<List<ServicoResponse>> listarPorPrestador(@RequestParam UUID prestadorId,
+                                                                      @RequestParam(required = false) Integer page,
+                                                                      @RequestParam(required = false) Integer size) {
         ListarServicosPorPrestadorQuery query = new ListarServicosPorPrestadorQuery(new PrestadorId(prestadorId));
-        return listarServicosPorPrestadorUseCase.executar(query).stream().map(ServicoResponse::de).toList();
+        List<ServicoResponse> todos = listarServicosPorPrestadorUseCase.executar(query).stream().map(ServicoResponse::de).toList();
+        return Paginacao.aplicar(todos, page, size);
     }
 
     @PutMapping("/{id}")

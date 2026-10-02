@@ -29,6 +29,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -98,6 +99,26 @@ class PrestadorControllerTest {
     }
 
     @Test
+    void deveRetornar400QuandoSenhaFraca() throws Exception {
+        String corpo = """
+                {
+                    "nome": "Clinica Bem-Estar",
+                    "telefone": "11987654321",
+                    "email": "clinica@exemplo.com",
+                    "senha": "12345678",
+                    "documentoNumero": "11222333000181",
+                    "documentoTipo": "CNPJ"
+                }
+                """;
+
+        mockMvc.perform(post("/api/prestadores")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(corpo))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void deveRetornar409QuandoDocumentoOuEmailDuplicado() throws Exception {
         given(cadastrarPrestadorUseCase.executar(any()))
                 .willThrow(new DataIntegrityViolationException("uk_prestador_documento"));
@@ -128,6 +149,17 @@ class PrestadorControllerTest {
         mockMvc.perform(get("/api/prestadores"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(prestador.id().valor().toString()));
+    }
+
+    @Test
+    void devePaginarQuandoPageESizeInformados() throws Exception {
+        List<Prestador> prestadores = List.of(prestadorExemplo(), prestadorExemplo(), prestadorExemplo());
+        given(listarPrestadoresUseCase.executar()).willReturn(prestadores);
+
+        mockMvc.perform(get("/api/prestadores").param("page", "0").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Total-Count", "3"))
+                .andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test

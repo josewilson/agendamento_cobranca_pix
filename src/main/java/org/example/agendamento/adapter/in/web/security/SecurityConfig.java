@@ -1,6 +1,7 @@
 package org.example.agendamento.adapter.in.web.security;
 
 import org.example.agendamento.config.CorsProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,6 +57,12 @@ public class SecurityConfig {
 
     private final CorsProperties corsProperties;
 
+    @Value("${server.servlet.session.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${server.servlet.session.cookie.same-site:lax}")
+    private String cookieSameSite;
+
     public SecurityConfig(CorsProperties corsProperties) {
         this.corsProperties = corsProperties;
     }
@@ -90,10 +97,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        // Mesmos atributos do cookie de sessao (server.servlet.session.cookie.*) — os dois cookies
+        // devem seguir a mesma politica de Secure/SameSite (achado de auditoria de seguranca, 02/10/2026).
+        csrfTokenRepository.setCookieCustomizer(cookie -> cookie.secure(cookieSecure).sameSite(cookieSameSite));
+
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers("/api/webhooks/**"))
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
