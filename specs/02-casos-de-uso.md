@@ -60,7 +60,7 @@ Busca o agendamento por ID — `RecursoNaoEncontradoException` se não existir. 
 
 **Query:** `ListarAgendamentosPorPrestadorQuery(prestadorId)`
 
-Busca todos os agendamentos do prestador (`AgendamentoRepository.buscarPorPrestador`, distinto de `buscarAtivosPorPrestador` usado pelo `VerificadorDeConflito` — este inclui qualquer status, inclusive `CANCELADO`/`NO_SHOW`/histórico), ordenados por `periodo.inicio` ascendente. Sem 404 se o prestador não existir ou não tiver nenhum agendamento — lista vazia é resposta válida, mesmo padrão de `ListarServicosPorPrestadorUseCase`. Existe para servir o `GET /api/agendamentos?prestadorId=`, a tela de agenda do frontend — antes da Fase 4 (item "listagem/agenda") não havia nenhum jeito de ver os agendamentos de um prestador de uma vez, só consultar um por um pelo id (que, pela regra de nunca mostrar id na tela, nem tinha como descobrir depois de sair da tela de criação).
+Busca todos os agendamentos do prestador (`AgendamentoRepository.buscarPorPrestador`, distinto de `buscarAtivosPorPrestador` usado pelo `VerificadorDeConflito` — este inclui qualquer status, inclusive `CANCELADO`/`NO_SHOW`/histórico), ordenados por `periodo.inicio` ascendente. Sem 404 se o prestador não existir ou não tiver nenhum agendamento — lista vazia é resposta válida, mesmo padrão de `ListarServicosPorPrestadorUseCase`. Existe para servir o `GET /api/agendamentos?prestadorId=`, a tela de agenda do frontend — antes da Fase 4 (item "listagem/agenda") não havia nenhum jeito de ver os agendamentos de um prestador de uma vez, só consultar um por um pelo id (que, pela regra de nunca mostrar id na tela, nem tinha como descobrir depois de sair da tela de criação). `prestadorId` voltou a ser aceito como parâmetro explícito (opcional — pedido do usuário, 02/10/2026, ver abaixo), mantendo a mesma query/caso de uso; só o controller muda de onde tira o id.
 
 ## Notificações (reação a eventos, não um caso de uso próprio)
 
@@ -88,9 +88,9 @@ Pedido explícito do usuário: login simples, só para `Prestador` (`Cliente` co
 
 `Prestador` ganhou `email` (`String`, único, validado com o mesmo padrão de `Contato.email`, mas duplicado como campo simples — mesmo precedente do `telefone`, ver `specs/04-roadmap.md`) e `senhaHash` (`String`, só valida não-vazio). `PrestadorRepository` ganhou `buscarPorEmail(String)`, usado por `PrestadorUserDetailsService` (`adapter/in/web/security/`, implementa `UserDetailsService` do Spring Security) para autenticar.
 
-Dois casos de uso REST existentes passaram a exigir login e derivar o `PrestadorId` da sessão autenticada em vez de confiar num valor enviado pelo chamador:
-- `ListarAgendamentosPorPrestadorUseCase` — `GET /api/agendamentos` não recebe mais `prestadorId` como parâmetro; o controller pega do `@AuthenticationPrincipal`. Antes dessa mudança, qualquer um podia pedir a agenda de qualquer prestador só sabendo o id.
-- `CadastrarServicoUseCase` — `POST /api/servicos` não recebe mais `prestadorId` no corpo; idem, vem da sessão. Impede que um prestador cadastre serviço em nome de outro.
+Dois casos de uso REST existentes passaram a exigir login:
+- `CadastrarServicoUseCase` — `POST /api/servicos` não recebe mais `prestadorId` no corpo; o controller pega do `@AuthenticationPrincipal`. Impede que um prestador cadastre serviço em nome de outro.
+- `ListarAgendamentosPorPrestadorUseCase` — `GET /api/agendamentos` exige login, mas **não exige mais que o `prestadorId` seja o da sessão** (reversão parcial pedida pelo usuário em 02/10/2026, ver `specs/04-roadmap.md`): `prestadorId` é opcional na query string — se vier, usa esse (visualizar a agenda de qualquer prestador, para a tela de Agenda ter um seletor); se não vier, cai no `@AuthenticationPrincipal` como antes. A barreira que resta é só "estar logado como algum prestador", não "ser o dono daquela agenda".
 
 O resto do fluxo público (listar prestador/serviço para montar a tela de reserva, cadastrar cliente, criar/consultar/cancelar/marcar no-show um agendamento, webhooks de pagamento) continua sem exigir login — decisão explícita de escopo, não uma lacuna esquecida. Ver `specs/03-api-rest.md` para os endpoints `/api/auth/*` e `specs/04-roadmap.md` para o racional completo.
 
