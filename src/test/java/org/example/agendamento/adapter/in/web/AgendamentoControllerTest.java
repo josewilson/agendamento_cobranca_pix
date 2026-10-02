@@ -134,6 +134,29 @@ class AgendamentoControllerTest {
     }
 
     @Test
+    void deveRetornar502QuandoGatewayDePagamentoFalhar() throws Exception {
+        given(criarAgendamentoUseCase.executar(any()))
+                .willThrow(org.springframework.web.client.HttpClientErrorException.Unauthorized
+                        .create(org.springframework.http.HttpStatus.UNAUTHORIZED, "Unauthorized", null, null, null));
+
+        String corpo = """
+                {
+                    "prestadorId": "%s",
+                    "clienteId": "%s",
+                    "servicoId": "%s",
+                    "inicio": "2026-10-02T12:00:00Z",
+                    "fim": "2026-10-02T12:30:00Z"
+                }
+                """.formatted(UUID_EXEMPLO, UUID_EXEMPLO, UUID_EXEMPLO);
+
+        mockMvc.perform(post("/api/agendamentos")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(corpo))
+                .andExpect(status().isBadGateway());
+    }
+
+    @Test
     void deveConsultarAgendamentoERetornar200() throws Exception {
         Agendamento agendamento = agendamentoExemplo();
         given(consultarAgendamentoUseCase.executar(any())).willReturn(agendamento);
