@@ -33,6 +33,17 @@ export default function AgendaPage() {
     return servicos.find((s) => s.id === servicoId)?.nome ?? '(serviço removido)';
   }
 
+  const hoje = new Date();
+  const agendamentosHoje = agendamentos.filter((a) => {
+    const inicio = new Date(a.inicio);
+    return (
+      inicio.getFullYear() === hoje.getFullYear() &&
+      inicio.getMonth() === hoje.getMonth() &&
+      inicio.getDate() === hoje.getDate()
+    );
+  }).length;
+  const pendentes = agendamentos.filter((a) => a.status === 'PENDENTE_PAGAMENTO').length;
+
   return (
     <div>
       <h1>Minha agenda</h1>
@@ -40,6 +51,23 @@ export default function AgendaPage() {
       {erro && <p className="erro">{erro}</p>}
 
       {!erro && !carregando && agendamentos.length === 0 && <p>Nenhum agendamento ainda.</p>}
+
+      {agendamentos.length > 0 && (
+        <div className="resumo">
+          <div className="resumo-card">
+            <strong>{agendamentos.length}</strong>
+            <span>No total</span>
+          </div>
+          <div className="resumo-card">
+            <strong>{agendamentosHoje}</strong>
+            <span>Hoje</span>
+          </div>
+          <div className="resumo-card">
+            <strong>{pendentes}</strong>
+            <span>Aguardando pagamento</span>
+          </div>
+        </div>
+      )}
 
       {agendamentos.length > 0 && (
         <table className="tabela">

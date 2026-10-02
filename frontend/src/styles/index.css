@@ -123,9 +123,48 @@ h1 {
 }
 
 .container {
-  max-width: 880px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 2.5rem 2rem 4rem;
+}
+
+/* Telas de cadastro (Prestadores/Clientes/Serviços): formulário fixo numa coluna lateral,
+   lista de itens já cadastrados ocupando o espaço restante — em vez de empilhado verticalmente. */
+.tela-split {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.painel-form {
+  position: sticky;
+  top: 5.5rem;
+}
+
+.painel-form h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.painel-conteudo {
+  min-width: 0;
+}
+
+.painel-conteudo h2 {
+  font-size: 1.1rem;
+  color: var(--cor-texto-suave);
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 860px) {
+  .tela-split {
+    grid-template-columns: 1fr;
+  }
+
+  .painel-form {
+    position: static;
+  }
 }
 
 .form {
@@ -139,6 +178,43 @@ h1 {
   margin-bottom: 1.75rem;
   max-width: 440px;
   box-shadow: var(--sombra);
+}
+
+.painel-form .form {
+  max-width: none;
+  margin-bottom: 0;
+}
+
+.resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.resumo-card {
+  flex: 1 1 150px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--sombra);
+}
+
+.resumo-card strong {
+  display: block;
+  font-family: 'Sora', sans-serif;
+  font-size: 1.7rem;
+  color: var(--cor-primaria-escura);
+  line-height: 1.2;
+}
+
+.resumo-card span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .form label {
