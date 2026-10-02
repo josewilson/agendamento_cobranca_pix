@@ -1,25 +1,20 @@
 package org.example.agendamento.adapter.in.web;
 
-import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import org.example.agendamento.adapter.in.web.security.SecurityConfig;
+import org.example.agendamento.adapter.in.web.security.TestAutenticacao;
 import org.example.agendamento.application.exception.AcessoNaoAutorizadoException;
 import org.example.agendamento.application.port.in.AtualizarServicoUseCase;
 import org.example.agendamento.application.port.in.CadastrarServicoUseCase;
 import org.example.agendamento.application.port.in.ExcluirServicoUseCase;
 import org.example.agendamento.application.port.in.ListarServicosPorPrestadorUseCase;
-import org.example.agendamento.domain.model.prestador.Prestador;
 import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.example.agendamento.domain.model.servico.Servico;
 import org.example.agendamento.domain.model.servico.ServicoId;
 import org.example.agendamento.domain.model.shared.Dinheiro;
-import org.example.agendamento.domain.model.shared.DocumentoFiscal;
-import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -62,14 +57,6 @@ class ServicoControllerTest {
                 Duration.ofMinutes(60), Dinheiro.de("150.00"), BigDecimal.valueOf(30));
     }
 
-    private static Authentication autenticacaoDoPrestador() {
-        Prestador prestador = new Prestador(PRESTADOR_ID, "Clinica Teste", "11987654321",
-                "clinica@exemplo.com", "hash-fake-de-teste",
-                DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
-        PrestadorPrincipal principal = new PrestadorPrincipal(prestador);
-        return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
-    }
-
     @Test
     void deveCadastrarServicoERetornar201() throws Exception {
         Servico servico = servicoExemplo();
@@ -85,7 +72,7 @@ class ServicoControllerTest {
                 """;
 
         mockMvc.perform(post("/api/servicos")
-                        .with(authentication(autenticacaoDoPrestador()))
+                        .with(authentication(TestAutenticacao.doPrestador(PRESTADOR_ID)))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -124,7 +111,7 @@ class ServicoControllerTest {
                 """;
 
         mockMvc.perform(post("/api/servicos")
-                        .with(authentication(autenticacaoDoPrestador()))
+                        .with(authentication(TestAutenticacao.doPrestador(PRESTADOR_ID)))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -156,7 +143,7 @@ class ServicoControllerTest {
                 """;
 
         mockMvc.perform(put("/api/servicos/" + servico.id().valor())
-                        .with(authentication(autenticacaoDoPrestador()))
+                        .with(authentication(TestAutenticacao.doPrestador(PRESTADOR_ID)))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -179,7 +166,7 @@ class ServicoControllerTest {
                 """;
 
         mockMvc.perform(put("/api/servicos/" + ServicoId.novo().valor())
-                        .with(authentication(autenticacaoDoPrestador()))
+                        .with(authentication(TestAutenticacao.doPrestador(PRESTADOR_ID)))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -191,7 +178,7 @@ class ServicoControllerTest {
         ServicoId id = ServicoId.novo();
 
         mockMvc.perform(delete("/api/servicos/" + id.valor())
-                        .with(authentication(autenticacaoDoPrestador()))
+                        .with(authentication(TestAutenticacao.doPrestador(PRESTADOR_ID)))
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 

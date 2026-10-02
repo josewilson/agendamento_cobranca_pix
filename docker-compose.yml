@@ -10,6 +10,34 @@ services:
       - "5432:5432"
     volumes:
       - agendamento-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agendamento -d agendamento"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Sobe a aplicacao de verdade dentro do Docker (perfil padrao, nunca "dev" - ver CLAUDE.md).
+  # Variaveis SPRING_DATASOURCE_* sobrescrevem application.yml via binding relaxado do Spring Boot,
+  # sem precisar de nenhum arquivo de config extra - o host muda de "localhost" (uso local) pra
+  # "postgres" (nome do servico neste compose, resolvido pela rede interna do Docker).
+  app:
+    build: .
+    container_name: agendamento-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_USERNAME: agendamento
+      SPRING_DATASOURCE_PASSWORD: agendamento
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      ASAAS_API_KEY: ${ASAAS_API_KEY:-}
+      ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
+      PAGAMENTO_GATEWAY: ${PAGAMENTO_GATEWAY:-asaas}
+    ports:
+      - "8080:8080"
 
 volumes:
   agendamento-postgres-data:

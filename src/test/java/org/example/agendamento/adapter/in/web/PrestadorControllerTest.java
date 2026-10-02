@@ -1,7 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
-import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import org.example.agendamento.adapter.in.web.security.SecurityConfig;
+import org.example.agendamento.adapter.in.web.security.TestAutenticacao;
 import org.example.agendamento.application.exception.AcessoNaoAutorizadoException;
 import org.example.agendamento.application.port.in.AtualizarPrestadorUseCase;
 import org.example.agendamento.application.port.in.CadastrarPrestadorUseCase;
@@ -15,8 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -52,14 +50,6 @@ class PrestadorControllerTest {
         return new Prestador(PrestadorId.novo(), "Clinica Bem-Estar", "11987654321",
                 "clinica@exemplo.com", "hash-fake-de-teste", DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
-    }
-
-    private static Authentication autenticacaoDoPrestador(PrestadorId prestadorId) {
-        Prestador prestador = new Prestador(prestadorId, "Clinica Teste", "11987654321",
-                "clinica@exemplo.com", "hash-fake-de-teste",
-                DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
-        PrestadorPrincipal principal = new PrestadorPrincipal(prestador);
-        return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
     }
 
     @Test
@@ -153,7 +143,7 @@ class PrestadorControllerTest {
                 """;
 
         mockMvc.perform(put("/api/prestadores/" + prestador.id().valor())
-                        .with(authentication(autenticacaoDoPrestador(prestador.id())))
+                        .with(authentication(TestAutenticacao.doPrestador(prestador.id())))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -175,7 +165,7 @@ class PrestadorControllerTest {
                 """;
 
         mockMvc.perform(put("/api/prestadores/" + idAlvo.valor())
-                        .with(authentication(autenticacaoDoPrestador(PrestadorId.novo())))
+                        .with(authentication(TestAutenticacao.doPrestador(PrestadorId.novo())))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))

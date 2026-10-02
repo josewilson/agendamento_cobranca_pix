@@ -61,6 +61,26 @@ app:
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
+# So /health exposto por padrao (checagem de liveness/readiness pra orquestrador/monitoramento) —
+# os demais endpoints do Actuator (env, beans, etc.) vazam detalhe de implementacao e nao tem por
+# que ficar publicos num projeto sem autenticacao de operador separada.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    # spring-boot-starter-mail registra um health check que tenta conectar no SMTP configurado —
+    # mas e-mail e uma integracao opcional aqui (a aplicacao sobe e funciona normalmente sem SMTP
+    # configurado, ver CLAUDE.md), entao um SMTP fora do ar nao deveria derrubar o /health da
+    # aplicacao inteira. O mesmo vale pra mail: desabilitado, os demais indicadores (db, disco)
+    # continuam ativos.
+    mail:
+      enabled: false
+
 ---
 # Perfil dev: usado SÓ pelos testes (ver specs/04-roadmap.md) — nunca para rodar a aplicação
 # de verdade, que deve sempre usar o perfil padrão com Postgres real (docker-compose up -d).

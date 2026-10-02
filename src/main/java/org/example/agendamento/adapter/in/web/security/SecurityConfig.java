@@ -102,6 +102,7 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/prestadores").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/prestadores").permitAll()

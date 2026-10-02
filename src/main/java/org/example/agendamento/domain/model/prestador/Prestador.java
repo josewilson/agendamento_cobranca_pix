@@ -1,15 +1,12 @@
 package org.example.agendamento.domain.model.prestador;
 
 import org.example.agendamento.domain.model.shared.DocumentoFiscal;
+import org.example.agendamento.domain.model.shared.FormatoContato;
 import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
 
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 public class Prestador {
-
-    private static final Pattern TELEFONE_PATTERN = Pattern.compile("^\\+?\\d{10,14}$");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$");
 
     private final PrestadorId id;
     private String nome;
@@ -38,20 +35,11 @@ public class Prestador {
     }
 
     private static String validarTelefone(String telefone) {
-        Objects.requireNonNull(telefone, "telefone nao pode ser nulo");
-        String telefoneNormalizado = telefone.replaceAll("[\\s()-]", "");
-        if (!TELEFONE_PATTERN.matcher(telefoneNormalizado).matches()) {
-            throw new IllegalArgumentException("telefone invalido: " + telefone);
-        }
-        return telefoneNormalizado;
+        return FormatoContato.validarTelefone(telefone);
     }
 
     private static String validarEmail(String email) {
-        Objects.requireNonNull(email, "email nao pode ser nulo");
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw new IllegalArgumentException("email invalido: " + email);
-        }
-        return email;
+        return FormatoContato.validarEmail(email);
     }
 
     private static String validarSenhaHash(String senhaHash) {

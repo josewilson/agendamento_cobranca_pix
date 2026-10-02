@@ -1,7 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
-import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import org.example.agendamento.adapter.in.web.security.SecurityConfig;
+import org.example.agendamento.adapter.in.web.security.TestAutenticacao;
 import org.example.agendamento.application.exception.RecursoNaoEncontradoException;
 import org.example.agendamento.application.port.in.CancelarAgendamentoUseCase;
 import org.example.agendamento.application.port.in.ConsultarAgendamentoUseCase;
@@ -14,19 +14,15 @@ import org.example.agendamento.domain.model.agendamento.Agendamento;
 import org.example.agendamento.domain.model.agendamento.AgendamentoId;
 import org.example.agendamento.domain.model.agendamento.ResultadoCancelamento;
 import org.example.agendamento.domain.model.cliente.ClienteId;
-import org.example.agendamento.domain.model.prestador.Prestador;
 import org.example.agendamento.domain.model.prestador.PrestadorId;
 import org.example.agendamento.domain.model.servico.ServicoId;
 import org.example.agendamento.domain.model.shared.Dinheiro;
-import org.example.agendamento.domain.model.shared.DocumentoFiscal;
 import org.example.agendamento.domain.model.shared.Periodo;
 import org.example.agendamento.domain.model.shared.PoliticaCancelamento;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -177,7 +173,7 @@ class AgendamentoControllerTest {
         Agendamento agendamento = agendamentoExemplo();
         given(listarAgendamentosPorPrestadorUseCase.executar(any())).willReturn(List.of(agendamento));
 
-        mockMvc.perform(get("/api/agendamentos").with(authentication(autenticacaoDoPrestador(agendamento.prestadorId()))))
+        mockMvc.perform(get("/api/agendamentos").with(authentication(TestAutenticacao.doPrestador(agendamento.prestadorId()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(agendamento.id().valor().toString()));
     }
@@ -186,14 +182,6 @@ class AgendamentoControllerTest {
     void deveRetornar401QuandoListarSemLogin() throws Exception {
         mockMvc.perform(get("/api/agendamentos"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    private static Authentication autenticacaoDoPrestador(PrestadorId prestadorId) {
-        Prestador prestador = new Prestador(prestadorId, "Clinica Teste", "11987654321",
-                "clinica@exemplo.com", "hash-fake-de-teste",
-                DocumentoFiscal.cnpj("11222333000181"), PoliticaCancelamento.padrao());
-        PrestadorPrincipal principal = new PrestadorPrincipal(prestador);
-        return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
     }
 
     private static final String UUID_EXEMPLO = "11111111-1111-1111-1111-111111111111";
