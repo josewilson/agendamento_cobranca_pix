@@ -7,7 +7,7 @@
 
 <p align="center">
   <img alt="Java" src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white">
-  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring_Boot-3.5.11-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white">
   <br>
@@ -154,7 +154,7 @@ stateDiagram-v2
 <table>
 <tr><td><b>Backend</b></td><td>
 
-Java 21 · Spring Boot 3.5.11 · Spring Security · Spring Data JPA · Spring Validation ·
+Java 21 · Spring Boot 4.1.1 · Spring Security · Spring Data JPA · Spring Validation ·
 PostgreSQL 16 · Flyway · Micrometer/Prometheus · springdoc-openapi (Swagger UI)
 
 </td></tr>
@@ -358,4 +358,4 @@ em Java/Spring Boot. Sem licença de distribuição formal definida.
 
 ---
 
-<p align="center">Feito como projeto de portfólio — arquitetura hexagonal, Java 21 + Spring Boot 3.5.11.</p>
+<p align="center">Feito como projeto de portfólio — arquitetura hexagonal, Java 21 + Spring Boot 4.1.1.</p>

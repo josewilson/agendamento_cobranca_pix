@@ -8,7 +8,7 @@ Leia `specs/` (`00-visao-geral.md` até `04-roadmap.md`) no início de toda sess
 
 ## Projeto
 
-Agendamento com cobrança via Pix — uma plataforma de agendamento para prestadores de serviço (clínicas, barbearias, estúdios) com cobrança de sinal/multa de cancelamento via Pix. Projeto de portfólio em arquitetura hexagonal, Java 21 + Spring Boot 3.5.11.
+Agendamento com cobrança via Pix — uma plataforma de agendamento para prestadores de serviço (clínicas, barbearias, estúdios) com cobrança de sinal/multa de cancelamento via Pix. Projeto de portfólio em arquitetura hexagonal, Java 21 + Spring Boot 4.1.1 (Spring Framework 7, Jakarta EE 11, Jackson 3 — migrado de 3.5.11 em 02/10/2026, ver `specs/04-roadmap.md`).
 
 ## Regra inegociável: ids e senhas nunca aparecem
 

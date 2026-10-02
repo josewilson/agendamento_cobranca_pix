@@ -16,7 +16,7 @@ Plataforma de agendamento para prestadores de serviço (clínicas, barbearias, e
 
 ## Stack técnico
 
-Java 21, Spring Boot 3.5.11, PostgreSQL, Flyway, Testcontainers, Docker Compose, ArchUnit, JUnit 5 + AssertJ, Mockito, WireMock (dependência já registrada, uso previsto para a Fase 4).
+Java 21, Spring Boot 4.1.1 (Spring Framework 7, Jakarta EE 11, Jackson 3), PostgreSQL, Flyway, Testcontainers 2.x, Docker Compose, ArchUnit, JUnit 5 + AssertJ, Mockito, WireMock.
 
 ## Diferenciais de arquitetura
 
