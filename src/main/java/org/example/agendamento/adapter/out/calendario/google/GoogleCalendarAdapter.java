@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -46,11 +47,14 @@ public class GoogleCalendarAdapter implements CalendarioExternoPort {
         // HttpClient da JDK tenta negociar HTTP/2 por padrao, o que quebra contra WireMock.
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
                 .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(10));
 
         this.restClient = restClientBuilder
                 .baseUrl(properties.baseUrl())
-                .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                .requestFactory(requestFactory)
                 .build();
         this.properties = properties;
     }

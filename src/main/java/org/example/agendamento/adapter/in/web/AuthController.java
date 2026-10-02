@@ -4,11 +4,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.example.agendamento.adapter.in.web.security.LoginBloqueadoException;
+import org.example.agendamento.adapter.in.web.security.LoginRateLimiter;
 import org.example.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,17 +37,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
+    private final LoginRateLimiter loginRateLimiter;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, LoginRateLimiter loginRateLimiter) {
         this.authenticationManager = authenticationManager;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @PostMapping("/login")
     public PrestadorLogadoResponse login(@Valid @RequestBody LoginRequest request,
                                           HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.senha()));
+        if (loginRateLimiter.bloqueado(request.email())) {
+            throw new LoginBloqueadoException("Muitas tentativas de login. Tente novamente em alguns minutos.");
+        }
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.senha()));
+        } catch (AuthenticationException ex) {
+            loginRateLimiter.registrarFalha(request.email());
+            throw ex;
+        }
+        loginRateLimiter.registrarSucesso(request.email());
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);

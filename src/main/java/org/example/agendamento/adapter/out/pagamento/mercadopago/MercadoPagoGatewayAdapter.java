@@ -47,11 +47,16 @@ public class MercadoPagoGatewayAdapter implements GatewayDePagamento {
     private final RestClient restClient;
 
     public MercadoPagoGatewayAdapter(RestClient.Builder restClientBuilder, MercadoPagoProperties properties) {
-        HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(10));
 
         this.restClient = restClientBuilder
                 .baseUrl(properties.baseUrl())
-                .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                .requestFactory(requestFactory)
                 .defaultHeader("Authorization", "Bearer " + properties.accessToken())
                 .defaultHeader("Content-Type", "application/json")
                 .build();

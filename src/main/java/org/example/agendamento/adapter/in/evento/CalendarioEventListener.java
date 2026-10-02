@@ -12,6 +12,7 @@ import org.example.agendamento.domain.model.servico.Servico;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,6 +44,7 @@ public class CalendarioEventListener {
         this.clienteRepository = clienteRepository;
     }
 
+    @Async("eventosExecutor")
     @EventListener
     public void aoConfirmarAgendamento(AgendamentoConfirmado evento) {
         try {
@@ -53,6 +55,7 @@ public class CalendarioEventListener {
         }
     }
 
+    @Async("eventosExecutor")
     @EventListener
     public void aoCancelarAgendamento(AgendamentoCancelado evento) {
         try {

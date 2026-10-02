@@ -12,6 +12,7 @@ import org.example.agendamento.domain.model.cliente.ClienteId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,6 +23,9 @@ import org.springframework.stereotype.Component;
  * specs/04-roadmap.md) — cada um isolado: a falha de um canal nunca impede o outro nem
  * propaga para o caso de uso que originou o evento (criar/confirmar/cancelar ja foi
  * persistido antes deste efeito colateral).
+ * {@code @Async} (pool dedicado, ver config/AsyncConfig) despacha cada metodo numa thread
+ * separada da requisicao HTTP que publicou o evento — SMTP/Twilio nao devem bloquear a
+ * resposta ao usuario (achado de auditoria de performance).
  */
 @Component
 public class NotificacaoEventListener {
@@ -36,17 +40,20 @@ public class NotificacaoEventListener {
         this.notificacaoDispatcher = notificacaoDispatcher;
     }
 
+    @Async("eventosExecutor")
     @EventListener
     public void aoCriarAgendamento(AgendamentoCriado evento) {
         notificar(evento.clienteId(), "Agendamento criado",
                 "Seu agendamento foi registrado. Se houver sinal a pagar, finalize o pagamento para confirmar.");
     }
 
+    @Async("eventosExecutor")
     @EventListener
     public void aoConfirmarAgendamento(AgendamentoConfirmado evento) {
         notificar(evento.clienteId(), "Agendamento confirmado", "Seu agendamento foi confirmado!");
     }
 
+    @Async("eventosExecutor")
     @EventListener
     public void aoCancelarAgendamento(AgendamentoCancelado evento) {
         notificar(evento.clienteId(), "Agendamento cancelado", "Seu agendamento foi cancelado.");

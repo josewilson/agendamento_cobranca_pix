@@ -8,6 +8,7 @@ import org.example.agendamento.domain.model.shared.Dinheiro;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,6 +31,7 @@ public class EstornoEventListener {
         this.agendamentoRepository = agendamentoRepository;
     }
 
+    @Async("eventosExecutor")
     @EventListener
     public void aoCancelarAgendamento(AgendamentoCancelado evento) {
         Dinheiro valorReembolsado = evento.resultado().valorReembolsado();

@@ -61,14 +61,15 @@ app:
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
-# So /health exposto por padrao (checagem de liveness/readiness pra orquestrador/monitoramento) —
-# os demais endpoints do Actuator (env, beans, etc.) vazam detalhe de implementacao e nao tem por
-# que ficar publicos num projeto sem autenticacao de operador separada.
+# So /health e /prometheus expostos por padrao (liveness/readiness pra orquestrador + metricas
+# pra scraping) — os demais endpoints do Actuator (env, beans, etc.) vazam detalhe de
+# implementacao e nao tem por que ficar publicos num projeto sem autenticacao de operador
+# separada.
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       show-details: never

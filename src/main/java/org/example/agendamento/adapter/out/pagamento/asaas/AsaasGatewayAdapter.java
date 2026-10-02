@@ -14,6 +14,7 @@ import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,11 +43,16 @@ public class AsaasGatewayAdapter implements GatewayDePagamento {
         // servidores de teste como o WireMock nao suportam, encerrando a conexao (EOF).
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
                 .build();
+        // Sem isso, uma API externa travada prende a thread chamadora indefinidamente
+        // (connectTimeout acima so cobre a etapa de conexao TCP, nao a espera pela resposta).
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(10));
 
         this.restClient = restClientBuilder
                 .baseUrl(properties.baseUrl())
-                .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                .requestFactory(requestFactory)
                 .defaultHeader("access_token", properties.apiKey())
                 .defaultHeader("Content-Type", "application/json")
                 .defaultHeader("User-Agent", "agendamento-com-cobranca-pix")

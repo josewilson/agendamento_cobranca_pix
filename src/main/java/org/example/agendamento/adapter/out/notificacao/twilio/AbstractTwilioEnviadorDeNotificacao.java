@@ -11,6 +11,7 @@ import org.springframework.web.client.RestClient;
 
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 
 /**
@@ -31,13 +32,16 @@ abstract class AbstractTwilioEnviadorDeNotificacao implements EnviadorDeNotifica
                                                     String numeroRemetente) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
                 .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(10));
         String credenciais = Base64.getEncoder()
                 .encodeToString((properties.accountSid() + ":" + properties.authToken()).getBytes(StandardCharsets.UTF_8));
 
         this.restClient = restClientBuilder
                 .baseUrl(properties.baseUrl())
-                .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                .requestFactory(requestFactory)
                 .defaultHeader("Authorization", "Basic " + credenciais)
                 .build();
         this.accountSid = properties.accountSid();

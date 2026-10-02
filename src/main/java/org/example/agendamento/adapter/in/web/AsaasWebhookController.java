@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Set;
 
 /**
@@ -42,7 +43,7 @@ public class AsaasWebhookController {
     public ResponseEntity<Void> processar(
             @RequestHeader(value = "asaas-access-token", required = false) String tokenRecebido,
             @RequestBody AsaasWebhookRequest request) {
-        if (!Objects.equals(tokenRecebido, properties.webhookToken())) {
+        if (!tokenValido(tokenRecebido, properties.webhookToken())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -51,5 +52,18 @@ public class AsaasWebhookController {
         processarWebhookPagamentoUseCase.executar(new WebhookPagamentoCommand(agendamentoId, pago));
 
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Comparacao em tempo constante (MessageDigest.isEqual) em vez de Objects.equals/String.equals —
+     * evita vazar, via timing, quantos caracteres do token configurado o chamador acertou.
+     */
+    private static boolean tokenValido(String tokenRecebido, String tokenConfigurado) {
+        if (tokenRecebido == null || tokenConfigurado == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                tokenRecebido.getBytes(StandardCharsets.UTF_8),
+                tokenConfigurado.getBytes(StandardCharsets.UTF_8));
     }
 }

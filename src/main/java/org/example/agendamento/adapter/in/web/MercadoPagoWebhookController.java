@@ -19,6 +19,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Map;
@@ -84,7 +85,10 @@ public class MercadoPagoWebhookController {
         }
         String manifesto = "id:" + idPagamento.toLowerCase() + ";request-id:" + xRequestId + ";ts:" + ts + ";";
         String v1Calculado = calcularHmac(manifesto, properties.webhookSecret());
-        return v1Calculado.equals(v1Recebido);
+        // Comparacao em tempo constante: e uma assinatura criptografica, o alvo classico de timing attack.
+        return MessageDigest.isEqual(
+                v1Calculado.getBytes(StandardCharsets.UTF_8),
+                v1Recebido.getBytes(StandardCharsets.UTF_8));
     }
 
     private static Map<String, String> dividirXSignature(String xSignature) {

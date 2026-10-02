@@ -1,6 +1,7 @@
 package org.example.agendamento.adapter.in.web;
 
 import org.example.agendamento.adapter.in.web.dto.ErrorResponse;
+import org.example.agendamento.adapter.in.web.security.LoginBloqueadoException;
 import org.example.agendamento.application.exception.AcessoNaoAutorizadoException;
 import org.example.agendamento.application.exception.RecursoNaoEncontradoException;
 import org.example.agendamento.domain.exception.ConflitoDeHorarioException;
@@ -51,6 +52,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse tratarViolacaoDeIntegridade(DataIntegrityViolationException ex) {
         return new ErrorResponse("Ja existe um cadastro com esses dados (documento ou email duplicado)");
+    }
+
+    @ExceptionHandler(LoginBloqueadoException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorResponse tratarLoginBloqueado(LoginBloqueadoException ex) {
+        return new ErrorResponse(ex.getMessage());
     }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
