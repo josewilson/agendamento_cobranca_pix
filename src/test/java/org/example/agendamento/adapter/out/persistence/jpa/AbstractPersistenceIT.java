@@ -4,9 +4,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * {@code @Transactional} aqui faz cada metodo {@code @Test} das subclasses rodar na sua propria
@@ -21,7 +21,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 abstract class AbstractPersistenceIT {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine");
 
     @DynamicPropertySource
     static void configurarDatasource(DynamicPropertyRegistry registry) {

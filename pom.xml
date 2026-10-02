@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -22,14 +22,33 @@
         <archunit.version>1.3.0</archunit.version>
         <wiremock.version>3.9.1</wiremock.version>
         <greenmail.version>2.1.9</greenmail.version>
-        <springdoc.version>2.8.14</springdoc.version>
+        <!-- Milestone, nao GA: e a unica versao do springdoc compativel com Spring Boot 4 ate o
+             momento desta migracao (02/10/2026). Risco aceito conscientemente - ver CLAUDE.md. -->
+        <springdoc.version>3.0.0-M1</springdoc.version>
         <google-auth.version>1.37.1</google-auth.version>
     </properties>
+
+    <!-- Necessario so por causa do springdoc-openapi 3.0.0-M1 (Milestone, nao disponivel no
+         Maven Central ainda) - ver CLAUDE.md para o porque dessa versao especifica. -->
+    <repositories>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- Spring Boot 4 tambem extraiu a autoconfiguracao de RestClient.Builder (usada por
+             AsaasGatewayAdapter, MercadoPagoGatewayAdapter, GoogleCalendarAdapter e os
+             enviadores Twilio) do spring-boot-autoconfigure principal pra este modulo. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -72,9 +91,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Spring Boot 4 extraiu a autoconfiguracao do Flyway do spring-boot-autoconfigure
+             principal pra este modulo dedicado (org.springframework.boot.flyway.autoconfigure) -
+             sem ele, FlywayAutoConfiguration nao roda e o Hibernate falha a validacao do schema
+             (ddl-auto: validate) por achar as tabelas ausentes, mesmo com flyway-core no classpath. -->
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -86,19 +109,29 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Spring Boot 4 modularizou o autoconfigure: @WebMvcTest/@AutoConfigureMockMvc saíram
+             de spring-boot-test-autoconfigure (coberto por spring-boot-starter-test) para este
+             modulo dedicado, exigido por todo *ControllerTest do projeto. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Testcontainers 2.0 (gerenciado pelo BOM do Spring Boot 4.1.1) renomeou os artefatos
+             com o prefixo "testcontainers-" (antes: junit-jupiter/postgresql, sem prefixo). -->
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
+            <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
