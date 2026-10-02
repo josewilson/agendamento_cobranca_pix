@@ -81,11 +81,17 @@ public class AgendamentoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AgendamentoResponse>> listarDoPrestadorLogado(
+    public ResponseEntity<List<AgendamentoResponse>> listar(
             @AuthenticationPrincipal PrestadorPrincipal principal,
+            @RequestParam(required = false) UUID prestadorId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
-        ListarAgendamentosPorPrestadorQuery query = new ListarAgendamentosPorPrestadorQuery(principal.prestadorId());
+        // prestadorId explicito permite ver a agenda de qualquer prestador (ex.: seletor na tela
+        // de Agenda do frontend), nao so a propria - exige login de algum prestador mesmo assim
+        // (ver SecurityConfig), mas nao precisa ser o mesmo que esta pedindo. Sem o parametro,
+        // mantem o comportamento antigo: a propria agenda de quem esta logado.
+        PrestadorId alvo = prestadorId != null ? new PrestadorId(prestadorId) : principal.prestadorId();
+        ListarAgendamentosPorPrestadorQuery query = new ListarAgendamentosPorPrestadorQuery(alvo);
         List<AgendamentoResponse> todos = listarAgendamentosPorPrestadorUseCase.executar(query).stream()
                 .map(AgendamentoResponse::de).toList();
         return Paginacao.aplicar(todos, page, size);

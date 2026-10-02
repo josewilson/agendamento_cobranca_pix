@@ -1,29 +1,47 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 export default function AgendaPage() {
   const navigate = useNavigate();
+  const { prestador } = useAuth();
+  const [prestadores, setPrestadores] = useState([]);
+  const [prestadorId, setPrestadorId] = useState('');
   const [agendamentos, setAgendamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(true);
 
+  // Lista de prestadores pro seletor + a propria sessao como selecao inicial (prestador ve a
+  // propria agenda por padrao, mas pode trocar pra ver a de qualquer outro).
   useEffect(() => {
+    api.get('/api/prestadores').then(setPrestadores).catch((e) => setErro(e.message));
+    if (prestador?.prestadorId) {
+      setPrestadorId(prestador.prestadorId);
+    }
+  }, [prestador]);
+
+  useEffect(() => {
+    if (!prestadorId) {
+      return;
+    }
     setErro(null);
     setCarregando(true);
-    Promise.all([api.get('/api/agendamentos'), api.get('/api/clientes')])
-      .then(([listaAgendamentos, listaClientes]) => {
+    Promise.all([
+      api.get(`/api/agendamentos?prestadorId=${prestadorId}`),
+      api.get('/api/clientes'),
+      api.get(`/api/servicos?prestadorId=${prestadorId}`),
+    ])
+      .then(([listaAgendamentos, listaClientes, listaServicos]) => {
         setAgendamentos(listaAgendamentos);
         setClientes(listaClientes);
-        const prestadorId = listaAgendamentos[0]?.prestadorId;
-        return prestadorId ? api.get(`/api/servicos?prestadorId=${prestadorId}`) : [];
+        setServicos(listaServicos);
       })
-      .then(setServicos)
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false));
-  }, []);
+  }, [prestadorId]);
 
   function nomeCliente(clienteId) {
     return clientes.find((c) => c.id === clienteId)?.nome ?? '(cliente removido)';
@@ -46,11 +64,23 @@ export default function AgendaPage() {
 
   return (
     <div>
-      <h1>Minha agenda</h1>
+      <h1>Agenda</h1>
+
+      <label className="seletor-prestador">
+        Prestador
+        <select value={prestadorId} onChange={(e) => setPrestadorId(e.target.value)}>
+          <option value="">Selecione...</option>
+          {prestadores.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nome}
+            </option>
+          ))}
+        </select>
+      </label>
 
       {erro && <p className="erro">{erro}</p>}
 
-      {!erro && !carregando && agendamentos.length === 0 && <p>Nenhum agendamento ainda.</p>}
+      {!erro && !carregando && prestadorId && agendamentos.length === 0 && <p>Nenhum agendamento ainda.</p>}
 
       {agendamentos.length > 0 && (
         <div className="resumo">
@@ -76,6 +106,7 @@ export default function AgendaPage() {
               <th>Início</th>
               <th>Cliente</th>
               <th>Serviço</th>
+              <th>Valor</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -86,6 +117,7 @@ export default function AgendaPage() {
                 <td>{new Date(a.inicio).toLocaleString('pt-BR')}</td>
                 <td>{nomeCliente(a.clienteId)}</td>
                 <td>{nomeServico(a.servicoId)}</td>
+                <td>R$ {a.valorServico}</td>
                 <td>
                   <span className="status-badge" data-status={a.status}>
                     {a.status}

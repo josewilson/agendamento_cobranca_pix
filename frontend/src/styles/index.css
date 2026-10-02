@@ -157,6 +157,27 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.seletor-prestador {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  margin-bottom: 1.5rem;
+}
+
+.seletor-prestador select {
+  padding: 0.55rem 0.8rem;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  min-width: 220px;
+}
+
 @media (max-width: 860px) {
   .tela-split {
     grid-template-columns: 1fr;
