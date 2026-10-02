@@ -49,14 +49,24 @@ export default function PrestadoresPage() {
     <div>
       <h1>Prestadores</h1>
 
-      <form onSubmit={handleSubmit} className="form">
+      <form onSubmit={handleSubmit} className="form" autoComplete="off">
         <label>
           Nome
-          <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
+          <input
+            value={form.nome}
+            onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            autoComplete="off"
+            required
+          />
         </label>
         <label>
           Telefone
-          <input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} required />
+          <input
+            value={form.telefone}
+            onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+            autoComplete="off"
+            required
+          />
         </label>
         <label>
           Email (login)
@@ -64,6 +74,7 @@ export default function PrestadoresPage() {
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
+            autoComplete="off"
             required
           />
         </label>
@@ -73,6 +84,7 @@ export default function PrestadoresPage() {
             type="password"
             value={form.senha}
             onChange={(e) => setForm({ ...form, senha: e.target.value })}
+            autoComplete="new-password"
             minLength={6}
             required
           />
