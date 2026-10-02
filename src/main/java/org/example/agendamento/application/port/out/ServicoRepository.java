@@ -14,4 +14,6 @@ public interface ServicoRepository {
     Optional<Servico> buscarPorId(ServicoId id);
 
     List<Servico> buscarPorPrestador(PrestadorId prestadorId);
+
+    void excluir(ServicoId id);
 }

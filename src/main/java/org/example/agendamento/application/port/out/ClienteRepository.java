@@ -13,4 +13,6 @@ public interface ClienteRepository {
     Optional<Cliente> buscarPorId(ClienteId id);
 
     List<Cliente> buscarTodos();
+
+    void excluir(ClienteId id);
 }

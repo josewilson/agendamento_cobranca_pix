@@ -25,10 +25,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
 
@@ -73,8 +75,10 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
 
         assertThat(encontrado).isPresent();
         assertThat(encontrado.get().status()).isEqualTo(StatusAgendamento.PENDENTE_PAGAMENTO);
-        assertThat(encontrado.get().periodo().inicio()).isEqualTo(periodo.inicio());
-        assertThat(encontrado.get().periodo().fim()).isEqualTo(periodo.fim());
+        // O round-trip por Postgres "timestamp" nao trunca de forma exata pro microssegundo (o driver
+        // introduz um residuo sub-microssegundo as vezes) — comparar com tolerancia em vez de igualdade exata.
+        assertThat(encontrado.get().periodo().inicio()).isCloseTo(periodo.inicio(), within(1, ChronoUnit.MILLIS));
+        assertThat(encontrado.get().periodo().fim()).isCloseTo(periodo.fim(), within(1, ChronoUnit.MILLIS));
         assertThat(encontrado.get().valorSinal()).isEqualTo(Dinheiro.de("30.00"));
     }
 

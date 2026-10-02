@@ -10,8 +10,8 @@ public class Cliente {
     private static final int LIMITE_NO_SHOW_PARA_SINAL_OBRIGATORIO = 2;
 
     private final ClienteId id;
-    private final String nome;
-    private final Contato contato;
+    private String nome;
+    private Contato contato;
     private final DocumentoFiscal documento;
     private int quantidadeNoShow;
 
@@ -39,6 +39,14 @@ public class Cliente {
 
     public void registrarNoShow() {
         quantidadeNoShow++;
+    }
+
+    /** Edita nome/contato do proprio cadastro. Documento e imutavel — trocar o documento fiscal
+     * de um cliente ja existente (com historico de agendamentos/no-show) mudaria a identidade
+     * fiscal da pessoa, nao um dado de cadastro. */
+    public void atualizarDadosCadastrais(String nome, Contato contato) {
+        this.nome = validarNome(nome);
+        this.contato = Objects.requireNonNull(contato, "contato nao pode ser nulo");
     }
 
     public boolean exigeSinalObrigatorio() {

@@ -38,4 +38,9 @@ public class ServicoRepositoryAdapter implements ServicoRepository {
                 .map(ServicoMapper::paraDominio)
                 .toList();
     }
+
+    @Override
+    public void excluir(ServicoId id) {
+        jpaRepository.deleteById(id.valor());
+    }
 }

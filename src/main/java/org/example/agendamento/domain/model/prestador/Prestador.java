@@ -12,8 +12,8 @@ public class Prestador {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$");
 
     private final PrestadorId id;
-    private final String nome;
-    private final String telefone;
+    private String nome;
+    private String telefone;
     private final String email;
     private final String senhaHash;
     private final DocumentoFiscal documento;
@@ -59,6 +59,14 @@ public class Prestador {
             throw new IllegalArgumentException("senhaHash nao pode ser vazio");
         }
         return senhaHash;
+    }
+
+    /** Edita nome/telefone do proprio cadastro. Email, senha e documento sao imutaveis por aqui —
+     * trocar identidade de login ou documento fiscal exigiria um fluxo proprio (confirmacao por
+     * email, nova validacao de documento), fora do escopo desta edicao simples. */
+    public void atualizarPerfil(String nome, String telefone) {
+        this.nome = validarNome(nome);
+        this.telefone = validarTelefone(telefone);
     }
 
     public PrestadorId id() { return id; }

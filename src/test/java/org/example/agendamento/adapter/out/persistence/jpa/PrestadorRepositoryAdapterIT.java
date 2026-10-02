@@ -33,7 +33,13 @@ class PrestadorRepositoryAdapterIT extends AbstractPersistenceIT {
         assertThat(encontrado.get().telefone()).isEqualTo("11987654321");
         assertThat(encontrado.get().email()).isEqualTo("clinica@exemplo.com");
         assertThat(encontrado.get().documento()).isEqualTo(prestador.documento());
-        assertThat(encontrado.get().politicaCancelamentoPadrao()).isEqualTo(prestador.politicaCancelamentoPadrao());
+        // Postgres "numeric" volta com escala propria (100.00); BigDecimal.equals() (usado pelo
+        // equals() gerado do record PoliticaCancelamento) e sensivel a escala mesmo quando
+        // compareTo() e zero, entao comparamos os dois campos em vez do record inteiro.
+        assertThat(encontrado.get().politicaCancelamentoPadrao().antecedenciaMinima())
+                .isEqualTo(prestador.politicaCancelamentoPadrao().antecedenciaMinima());
+        assertThat(encontrado.get().politicaCancelamentoPadrao().percentualRetido())
+                .isEqualByComparingTo(prestador.politicaCancelamentoPadrao().percentualRetido());
     }
 
     @Test

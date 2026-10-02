@@ -1,9 +1,11 @@
 package org.example.agendamento.adapter.in.web;
 
 import org.example.agendamento.adapter.in.web.dto.ErrorResponse;
+import org.example.agendamento.application.exception.AcessoNaoAutorizadoException;
 import org.example.agendamento.application.exception.RecursoNaoEncontradoException;
 import org.example.agendamento.domain.exception.ConflitoDeHorarioException;
 import org.example.agendamento.domain.exception.TransicaoDeStatusInvalidaException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,6 +23,12 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(ex.getMessage());
     }
 
+    @ExceptionHandler(AcessoNaoAutorizadoException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse tratarAcessoNaoAutorizado(AcessoNaoAutorizadoException ex) {
+        return new ErrorResponse(ex.getMessage());
+    }
+
     @ExceptionHandler(ConflitoDeHorarioException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse tratarConflitoDeHorario(ConflitoDeHorarioException ex) {
@@ -31,6 +39,18 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse tratarTransicaoInvalida(TransicaoDeStatusInvalidaException ex) {
         return new ErrorResponse(ex.getMessage());
+    }
+
+    /**
+     * Captura violacao de constraint unica (documento ou email duplicado — uk_prestador_documento,
+     * uk_cliente_documento, uk_prestador_email) antes que vire um 500 cru. A mensagem e generica
+     * de proposito: a causa exata (qual coluna, qual valor) e detalhe de implementacao do banco,
+     * nao algo que a API deveria vazar pro cliente.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse tratarViolacaoDeIntegridade(DataIntegrityViolationException ex) {
+        return new ErrorResponse("Ja existe um cadastro com esses dados (documento ou email duplicado)");
     }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})

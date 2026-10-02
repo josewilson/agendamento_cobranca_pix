@@ -35,4 +35,9 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
     public List<Cliente> buscarTodos() {
         return jpaRepository.findAll().stream().map(ClienteMapper::paraDominio).toList();
     }
+
+    @Override
+    public void excluir(ClienteId id) {
+        jpaRepository.deleteById(id.valor());
+    }
 }

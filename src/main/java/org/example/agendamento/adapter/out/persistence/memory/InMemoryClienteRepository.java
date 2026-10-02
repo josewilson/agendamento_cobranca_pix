@@ -33,4 +33,9 @@ public class InMemoryClienteRepository implements ClienteRepository {
     public List<Cliente> buscarTodos() {
         return new ArrayList<>(clientes.values());
     }
+
+    @Override
+    public void excluir(ClienteId id) {
+        clientes.remove(id);
+    }
 }

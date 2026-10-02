@@ -39,6 +39,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -87,6 +88,7 @@ class AgendamentoControllerTest {
                 """.formatted(agendamento.prestadorId().valor(), agendamento.clienteId().valor(), agendamento.servicoId().valor());
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
                 .andExpect(status().isCreated())
@@ -107,6 +109,7 @@ class AgendamentoControllerTest {
                 """.formatted(UUID_EXEMPLO, UUID_EXEMPLO);
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
                 .andExpect(status().isBadRequest());
@@ -128,6 +131,7 @@ class AgendamentoControllerTest {
                 """.formatted(UUID_EXEMPLO, UUID_EXEMPLO, UUID_EXEMPLO);
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
                 .andExpect(status().isConflict());
@@ -157,14 +161,14 @@ class AgendamentoControllerTest {
         given(cancelarAgendamentoUseCase.executar(any()))
                 .willReturn(new ResultadoCancelamento(Dinheiro.ZERO, Dinheiro.de("30.00")));
 
-        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/cancelar"))
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/cancelar").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valorReembolsado").value(30.00));
     }
 
     @Test
     void deveMarcarNoShowERetornar204() throws Exception {
-        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show"))
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show").with(csrf()))
                 .andExpect(status().isNoContent());
     }
 

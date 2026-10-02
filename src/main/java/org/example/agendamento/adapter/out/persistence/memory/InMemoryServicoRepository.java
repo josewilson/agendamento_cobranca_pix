@@ -35,4 +35,9 @@ public class InMemoryServicoRepository implements ServicoRepository {
                 .filter(servico -> servico.prestadorId().equals(prestadorId))
                 .toList();
     }
+
+    @Override
+    public void excluir(ServicoId id) {
+        servicos.remove(id);
+    }
 }
