@@ -2,16 +2,17 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: agendamento-postgres
+    command: ["postgres", "-p", "5434"]
     environment:
       POSTGRES_DB: agendamento
       POSTGRES_USER: agendamento
       POSTGRES_PASSWORD: agendamento
     ports:
-      - "5432:5432"
+      - "5434:5434"
     volumes:
       - agendamento-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agendamento -d agendamento"]
+      test: ["CMD-SHELL", "pg_isready -p 5434 -U agendamento -d agendamento"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,7 +28,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5434/agendamento
       SPRING_DATASOURCE_USERNAME: agendamento
       SPRING_DATASOURCE_PASSWORD: agendamento
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:5173}

@@ -2,7 +2,7 @@ spring:
   application:
     name: agendamento-com-cobranca-pix
   datasource:
-    url: jdbc:postgresql://localhost:5432/agendamento
+    url: jdbc:postgresql://localhost:5434/agendamento
     username: agendamento
     password: agendamento
   jpa:
