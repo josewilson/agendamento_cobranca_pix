@@ -1,6 +1,7 @@
 package br.com.josewilson.agendamento.adapter.in.evento;
 
 import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryAgendamentoRepository;
+import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryFilaDeEstornos;
 import br.com.josewilson.agendamento.application.port.out.GatewayDePagamento;
 import br.com.josewilson.agendamento.domain.event.AgendamentoCancelado;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
@@ -26,6 +27,7 @@ class EstornoEventListenerTest {
 
     private InMemoryAgendamentoRepository agendamentoRepository;
     private Map<String, Dinheiro> estornosChamados;
+    private InMemoryFilaDeEstornos fila;
     private EstornoEventListener listener;
     private Agendamento agendamentoComReferencia;
     private Agendamento agendamentoSemReferencia;
@@ -61,7 +63,33 @@ class EstornoEventListenerTest {
             }
         };
 
-        listener = new EstornoEventListener(gatewayDePagamento, agendamentoRepository);
+        fila = new InMemoryFilaDeEstornos();
+        listener = new EstornoEventListener(gatewayDePagamento, agendamentoRepository, fila, Instant::now);
+    }
+
+    @Test
+    void deveEnfileirarQuandoGatewayFalha() {
+        GatewayDePagamento quebrado = new GatewayDePagamento() {
+            @Override
+            public br.com.josewilson.agendamento.application.port.out.CobrancaPix gerarCobrancaPix(
+                    AgendamentoId agendamentoId, br.com.josewilson.agendamento.domain.model.cliente.Cliente cliente, Dinheiro valor) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void estornar(String referenciaExterna, Dinheiro valor) {
+                throw new IllegalStateException("gateway fora do ar");
+            }
+        };
+        new EstornoEventListener(quebrado, agendamentoRepository, fila, Instant::now).aoCancelarAgendamento(
+                new AgendamentoCancelado(agendamentoComReferencia.id(), agendamentoComReferencia.clienteId(),
+                        new ResultadoCancelamento(Dinheiro.ZERO, Dinheiro.de("30.00")), Instant.now()));
+
+        assertThat(fila.buscarPendentes(5)).singleElement()
+                .satisfies(p -> {
+                    assertThat(p.referencia()).isEqualTo("pay_123");
+                    assertThat(p.tentativas()).isEqualTo(1);
+                });
     }
 
     @Test

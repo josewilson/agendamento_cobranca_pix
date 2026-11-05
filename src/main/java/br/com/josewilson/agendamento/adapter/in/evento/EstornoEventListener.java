@@ -1,6 +1,8 @@
 package br.com.josewilson.agendamento.adapter.in.evento;
 
 import br.com.josewilson.agendamento.application.port.out.AgendamentoRepository;
+import br.com.josewilson.agendamento.application.port.out.Clock;
+import br.com.josewilson.agendamento.application.port.out.FilaDeEstornos;
 import br.com.josewilson.agendamento.application.port.out.GatewayDePagamento;
 import br.com.josewilson.agendamento.domain.event.AgendamentoCancelado;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
@@ -26,9 +28,15 @@ public class EstornoEventListener {
     private final GatewayDePagamento gatewayDePagamento;
     private final AgendamentoRepository agendamentoRepository;
 
-    public EstornoEventListener(GatewayDePagamento gatewayDePagamento, AgendamentoRepository agendamentoRepository) {
+    private final FilaDeEstornos fila;
+    private final Clock clock;
+
+    public EstornoEventListener(GatewayDePagamento gatewayDePagamento, AgendamentoRepository agendamentoRepository,
+                                FilaDeEstornos fila, Clock clock) {
         this.gatewayDePagamento = gatewayDePagamento;
         this.agendamentoRepository = agendamentoRepository;
+        this.fila = fila;
+        this.clock = clock;
     }
 
     @Async("eventosExecutor")
@@ -38,12 +46,24 @@ public class EstornoEventListener {
         if (!valorReembolsado.maiorQue(Dinheiro.ZERO)) {
             return;
         }
+        agendamentoRepository.buscarPorId(evento.agendamentoId())
+                .flatMap(Agendamento::referenciaPagamento)
+                .ifPresent(referencia -> estornarOuEnfileirar(evento, referencia, valorReembolsado));
+    }
+
+    /** Falha do gateway vai pra fila persistente (reprocessada por ReprocessamentoEstornoScheduler). */
+    private void estornarOuEnfileirar(AgendamentoCancelado evento, String referencia, Dinheiro valor) {
         try {
-            agendamentoRepository.buscarPorId(evento.agendamentoId())
-                    .flatMap(Agendamento::referenciaPagamento)
-                    .ifPresent(referencia -> gatewayDePagamento.estornar(referencia, valorReembolsado));
+            gatewayDePagamento.estornar(referencia, valor);
         } catch (RuntimeException ex) {
-            log.warn("Falha ao estornar pagamento do agendamento {}: {}", evento.agendamentoId(), ex.getMessage());
+            log.warn("Falha ao estornar pagamento do agendamento {}, enfileirando para nova tentativa: {}",
+                    evento.agendamentoId(), ex.getMessage());
+            try {
+                fila.registrar(evento.agendamentoId(), referencia, valor, ex.getMessage(), clock.agora());
+            } catch (RuntimeException filaEx) {
+                log.error("Estorno do agendamento {} NAO enfileirado, exige acao manual: {}",
+                        evento.agendamentoId(), filaEx.getMessage());
+            }
         }
     }
 }
