@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface ServicoJpaRepository extends JpaRepository<ServicoJpaEntity, UUID> {
 
     List<ServicoJpaEntity> findByPrestadorId(UUID prestadorId);
+
+    org.springframework.data.domain.Page<ServicoJpaEntity> findByPrestadorId(UUID prestadorId, org.springframework.data.domain.Pageable pageable);
 }

@@ -53,7 +53,7 @@ public class ClienteController {
     public ClienteResponse cadastrar(@Valid @RequestBody CadastrarClienteRequest request) {
         CadastrarClienteCommand command = new CadastrarClienteCommand(
                 request.nome(), request.email(), request.telefone(),
-                request.documentoNumero(), request.documentoTipo());
+                request.documentoNumero(), request.documentoTipo(), request.canalPreferido());
         Cliente cliente = cadastrarClienteUseCase.executar(command);
         return ClienteResponse.de(cliente);
     }
@@ -61,14 +61,17 @@ public class ClienteController {
     @GetMapping
     public ResponseEntity<List<ClienteResponse>> listar(@RequestParam(required = false) Integer page,
                                                           @RequestParam(required = false) Integer size) {
-        List<ClienteResponse> todos = listarClientesUseCase.executar().stream().map(ClienteResponse::de).toList();
-        return Paginacao.aplicar(todos, page, size);
+        if (Paginacao.paginado(page, size)) {
+            return Paginacao.pagina(listarClientesUseCase.executar(Paginacao.pagina(page), Paginacao.tamanho(size)),
+                    ClienteResponse::de);
+        }
+        return Paginacao.lista(listarClientesUseCase.executar().stream().map(ClienteResponse::de).toList());
     }
 
     @PutMapping("/{id}")
     public ClienteResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarClienteRequest request) {
         AtualizarClienteCommand command = new AtualizarClienteCommand(
-                new ClienteId(id), request.nome(), request.email(), request.telefone());
+                new ClienteId(id), request.nome(), request.email(), request.telefone(), request.canalPreferido());
         Cliente cliente = atualizarClienteUseCase.executar(command);
         return ClienteResponse.de(cliente);
     }

@@ -3,6 +3,8 @@ package br.com.josewilson.agendamento.adapter.out.persistence.jpa;
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.mapper.AgendamentoMapper;
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.repository.AgendamentoJpaRepository;
 import br.com.josewilson.agendamento.application.port.out.AgendamentoRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
+import org.springframework.data.domain.PageRequest;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
@@ -55,5 +57,11 @@ public class AgendamentoRepositoryAdapter implements AgendamentoRepository {
         return jpaRepository.findByPrestadorIdOrderByPeriodoInicioAsc(prestadorId.valor()).stream()
                 .map(AgendamentoMapper::paraDominio)
                 .toList();
+    }
+
+    @Override
+    public Pagina<Agendamento> buscarPaginaPorPrestador(PrestadorId prestadorId, int page, int size) {
+        var resultado = jpaRepository.findByPrestadorIdOrderByPeriodoInicioAsc(prestadorId.valor(), PageRequest.of(page, size));
+        return new Pagina<>(resultado.map(AgendamentoMapper::paraDominio).getContent(), resultado.getTotalElements());
     }
 }

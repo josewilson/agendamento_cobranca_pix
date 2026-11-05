@@ -1,6 +1,7 @@
 package br.com.josewilson.agendamento.adapter.out.persistence.memory;
 
 import br.com.josewilson.agendamento.application.port.out.AgendamentoRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
@@ -56,5 +57,10 @@ public class InMemoryAgendamentoRepository implements AgendamentoRepository {
                 .filter(agendamento -> agendamento.prestadorId().equals(prestadorId))
                 .sorted(Comparator.comparing(agendamento -> agendamento.periodo().inicio()))
                 .toList();
+    }
+
+    @Override
+    public Pagina<Agendamento> buscarPaginaPorPrestador(PrestadorId prestadorId, int page, int size) {
+        return Pagina.de(buscarPorPrestador(prestadorId), page, size);
     }
 }

@@ -57,8 +57,11 @@ public class PrestadorController {
     @GetMapping
     public ResponseEntity<List<PrestadorResponse>> listar(@RequestParam(required = false) Integer page,
                                                             @RequestParam(required = false) Integer size) {
-        List<PrestadorResponse> todos = listarPrestadoresUseCase.executar().stream().map(PrestadorResponse::de).toList();
-        return Paginacao.aplicar(todos, page, size);
+        if (Paginacao.paginado(page, size)) {
+            return Paginacao.pagina(listarPrestadoresUseCase.executar(Paginacao.pagina(page), Paginacao.tamanho(size)),
+                    PrestadorResponse::de);
+        }
+        return Paginacao.lista(listarPrestadoresUseCase.executar().stream().map(PrestadorResponse::de).toList());
     }
 
     @PutMapping("/{id}")

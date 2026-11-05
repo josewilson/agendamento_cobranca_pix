@@ -1,6 +1,7 @@
 package br.com.josewilson.agendamento.adapter.out.persistence.memory;
 
 import br.com.josewilson.agendamento.application.port.out.ClienteRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import org.springframework.context.annotation.Profile;
@@ -32,6 +33,11 @@ public class InMemoryClienteRepository implements ClienteRepository {
     @Override
     public List<Cliente> buscarTodos() {
         return new ArrayList<>(clientes.values());
+    }
+
+    @Override
+    public Pagina<Cliente> buscarPagina(int page, int size) {
+        return Pagina.de(clientes.values().stream().sorted(java.util.Comparator.comparing(Cliente::nome)).toList(), page, size);
     }
 
     @Override

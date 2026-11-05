@@ -6,6 +6,7 @@ import br.com.josewilson.agendamento.application.port.out.AgendamentoRepository;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import org.springframework.stereotype.Service;
 
+import br.com.josewilson.agendamento.application.port.out.Pagina;
 import java.util.List;
 
 @Service
@@ -20,5 +21,10 @@ public class ListarAgendamentosPorPrestadorService implements ListarAgendamentos
     @Override
     public List<Agendamento> executar(ListarAgendamentosPorPrestadorQuery query) {
         return agendamentoRepository.buscarPorPrestador(query.prestadorId());
+    }
+
+    @Override
+    public Pagina<Agendamento> executar(ListarAgendamentosPorPrestadorQuery query, int page, int size) {
+        return agendamentoRepository.buscarPaginaPorPrestador(query.prestadorId(), page, size);
     }
 }

@@ -3,6 +3,9 @@ package br.com.josewilson.agendamento.adapter.out.persistence.jpa;
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.mapper.ServicoMapper;
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.repository.ServicoJpaRepository;
 import br.com.josewilson.agendamento.application.port.out.ServicoRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
 import br.com.josewilson.agendamento.domain.model.servico.Servico;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
@@ -37,6 +40,12 @@ public class ServicoRepositoryAdapter implements ServicoRepository {
         return jpaRepository.findByPrestadorId(prestadorId.valor()).stream()
                 .map(ServicoMapper::paraDominio)
                 .toList();
+    }
+
+    @Override
+    public Pagina<Servico> buscarPaginaPorPrestador(PrestadorId prestadorId, int page, int size) {
+        var resultado = jpaRepository.findByPrestadorId(prestadorId.valor(), PageRequest.of(page, size, Sort.by("nome")));
+        return new Pagina<>(resultado.map(ServicoMapper::paraDominio).getContent(), resultado.getTotalElements());
     }
 
     @Override

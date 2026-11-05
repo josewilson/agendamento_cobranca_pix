@@ -1,6 +1,7 @@
 package br.com.josewilson.agendamento.adapter.out.persistence.memory;
 
 import br.com.josewilson.agendamento.application.port.out.PrestadorRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
 import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
 import org.springframework.context.annotation.Profile;
@@ -39,5 +40,10 @@ public class InMemoryPrestadorRepository implements PrestadorRepository {
     @Override
     public List<Prestador> buscarTodos() {
         return new ArrayList<>(prestadores.values());
+    }
+
+    @Override
+    public Pagina<Prestador> buscarPagina(int page, int size) {
+        return Pagina.de(prestadores.values().stream().sorted(java.util.Comparator.comparing(Prestador::nome)).toList(), page, size);
     }
 }

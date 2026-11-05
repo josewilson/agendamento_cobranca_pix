@@ -13,4 +13,7 @@ public interface AgendamentoJpaRepository extends JpaRepository<AgendamentoJpaEn
     List<AgendamentoJpaEntity> findByStatus(String status);
 
     List<AgendamentoJpaEntity> findByPrestadorIdOrderByPeriodoInicioAsc(UUID prestadorId);
+
+    org.springframework.data.domain.Page<AgendamentoJpaEntity> findByPrestadorIdOrderByPeriodoInicioAsc(
+            UUID prestadorId, org.springframework.data.domain.Pageable pageable);
 }

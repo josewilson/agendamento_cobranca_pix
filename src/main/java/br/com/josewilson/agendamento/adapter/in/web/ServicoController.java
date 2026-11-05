@@ -67,8 +67,12 @@ public class ServicoController {
                                                                       @RequestParam(required = false) Integer page,
                                                                       @RequestParam(required = false) Integer size) {
         ListarServicosPorPrestadorQuery query = new ListarServicosPorPrestadorQuery(new PrestadorId(prestadorId));
-        List<ServicoResponse> todos = listarServicosPorPrestadorUseCase.executar(query).stream().map(ServicoResponse::de).toList();
-        return Paginacao.aplicar(todos, page, size);
+        if (Paginacao.paginado(page, size)) {
+            return Paginacao.pagina(
+                    listarServicosPorPrestadorUseCase.executar(query, Paginacao.pagina(page), Paginacao.tamanho(size)),
+                    ServicoResponse::de);
+        }
+        return Paginacao.lista(listarServicosPorPrestadorUseCase.executar(query).stream().map(ServicoResponse::de).toList());
     }
 
     @PutMapping("/{id}")

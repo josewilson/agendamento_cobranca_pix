@@ -52,4 +52,23 @@ class ClienteRepositoryAdapterIT extends AbstractPersistenceIT {
     void deveRetornarVazioQuandoClienteNaoExiste() {
         assertThat(clienteRepository.buscarPorId(ClienteId.novo())).isEmpty();
     }
+
+    @Test
+    void devePaginarNoBancoEPersistirCanalPreferido() {
+        String[] cpfs = {"111.444.777-35", "529.982.247-25", "168.995.350-09"};
+        String[] nomes = {"Carlos", "Ana", "Bia"};
+        for (int i = 0; i < 3; i++) {
+            Cliente c = new Cliente(ClienteId.novo(), nomes[i],
+                    new Contato("c" + i + "@exemplo.com", "1198765432" + i), DocumentoFiscal.cpf(cpfs[i]));
+            c.definirCanalPreferido(br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido.WHATSAPP);
+            clienteRepository.salvar(c);
+        }
+
+        var pagina = clienteRepository.buscarPagina(1, 2);
+
+        assertThat(pagina.total()).isEqualTo(3);
+        assertThat(pagina.itens()).extracting(Cliente::nome).containsExactly("Carlos"); // ordenado por nome: Ana, Bia | Carlos
+        assertThat(pagina.itens().get(0).canalPreferido())
+                .isEqualTo(br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido.WHATSAPP);
+    }
 }

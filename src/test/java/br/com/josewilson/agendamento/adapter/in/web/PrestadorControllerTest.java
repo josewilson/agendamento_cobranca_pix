@@ -153,8 +153,9 @@ class PrestadorControllerTest {
 
     @Test
     void devePaginarQuandoPageESizeInformados() throws Exception {
-        List<Prestador> prestadores = List.of(prestadorExemplo(), prestadorExemplo(), prestadorExemplo());
-        given(listarPrestadoresUseCase.executar()).willReturn(prestadores);
+        given(listarPrestadoresUseCase.executar(0, 2)).willReturn(
+                new br.com.josewilson.agendamento.application.port.out.Pagina<>(
+                        List.of(prestadorExemplo(), prestadorExemplo()), 3));
 
         mockMvc.perform(get("/api/prestadores").param("page", "0").param("size", "2"))
                 .andExpect(status().isOk())

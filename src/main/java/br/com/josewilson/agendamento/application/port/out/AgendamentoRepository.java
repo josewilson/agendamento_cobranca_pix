@@ -18,4 +18,6 @@ public interface AgendamentoRepository {
     List<Agendamento> buscarTodosPendentesPagamento();
 
     List<Agendamento> buscarPorPrestador(PrestadorId prestadorId);
+
+    Pagina<Agendamento> buscarPaginaPorPrestador(PrestadorId prestadorId, int page, int size);
 }

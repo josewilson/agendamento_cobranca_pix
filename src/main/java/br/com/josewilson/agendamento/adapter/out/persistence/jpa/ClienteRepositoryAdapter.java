@@ -3,6 +3,9 @@ package br.com.josewilson.agendamento.adapter.out.persistence.jpa;
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.mapper.ClienteMapper;
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.repository.ClienteJpaRepository;
 import br.com.josewilson.agendamento.application.port.out.ClienteRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import org.springframework.context.annotation.Profile;
@@ -34,6 +37,12 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
     @Override
     public List<Cliente> buscarTodos() {
         return jpaRepository.findAll().stream().map(ClienteMapper::paraDominio).toList();
+    }
+
+    @Override
+    public Pagina<Cliente> buscarPagina(int page, int size) {
+        var resultado = jpaRepository.findAll(PageRequest.of(page, size, Sort.by("nome")));
+        return new Pagina<>(resultado.map(ClienteMapper::paraDominio).getContent(), resultado.getTotalElements());
     }
 
     @Override

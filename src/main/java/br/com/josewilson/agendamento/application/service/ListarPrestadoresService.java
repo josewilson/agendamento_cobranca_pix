@@ -5,6 +5,7 @@ import br.com.josewilson.agendamento.application.port.out.PrestadorRepository;
 import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
 import org.springframework.stereotype.Service;
 
+import br.com.josewilson.agendamento.application.port.out.Pagina;
 import java.util.List;
 
 @Service
@@ -19,5 +20,10 @@ public class ListarPrestadoresService implements ListarPrestadoresUseCase {
     @Override
     public List<Prestador> executar() {
         return prestadorRepository.buscarTodos();
+    }
+
+    @Override
+    public Pagina<Prestador> executar(int page, int size) {
+        return prestadorRepository.buscarPagina(page, size);
     }
 }

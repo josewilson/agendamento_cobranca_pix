@@ -15,4 +15,6 @@ public interface PrestadorRepository {
     Optional<Prestador> buscarPorEmail(String email);
 
     List<Prestador> buscarTodos();
+
+    Pagina<Prestador> buscarPagina(int page, int size);
 }

@@ -1,6 +1,7 @@
 package br.com.josewilson.agendamento.adapter.out.persistence.memory;
 
 import br.com.josewilson.agendamento.application.port.out.ServicoRepository;
+import br.com.josewilson.agendamento.application.port.out.Pagina;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
 import br.com.josewilson.agendamento.domain.model.servico.Servico;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
@@ -34,6 +35,11 @@ public class InMemoryServicoRepository implements ServicoRepository {
         return servicos.values().stream()
                 .filter(servico -> servico.prestadorId().equals(prestadorId))
                 .toList();
+    }
+
+    @Override
+    public Pagina<Servico> buscarPaginaPorPrestador(PrestadorId prestadorId, int page, int size) {
+        return Pagina.de(buscarPorPrestador(prestadorId).stream().sorted(java.util.Comparator.comparing(Servico::nome)).toList(), page, size);
     }
 
     @Override

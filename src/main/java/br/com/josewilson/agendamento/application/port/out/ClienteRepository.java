@@ -14,5 +14,7 @@ public interface ClienteRepository {
 
     List<Cliente> buscarTodos();
 
+    Pagina<Cliente> buscarPagina(int page, int size);
+
     void excluir(ClienteId id);
 }

@@ -15,5 +15,7 @@ public interface ServicoRepository {
 
     List<Servico> buscarPorPrestador(PrestadorId prestadorId);
 
+    Pagina<Servico> buscarPaginaPorPrestador(PrestadorId prestadorId, int page, int size);
+
     void excluir(ServicoId id);
 }
