@@ -1,0 +1,1 @@
+ALTER TABLE cliente ADD COLUMN canal_preferido VARCHAR(20) NOT NULL DEFAULT 'AMBOS';

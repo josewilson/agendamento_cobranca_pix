@@ -32,6 +32,9 @@ public class ClienteJpaEntity {
     @Column(name = "quantidade_no_show", nullable = false)
     private int quantidadeNoShow;
 
+    @Column(name = "canal_preferido", nullable = false)
+    private String canalPreferido = "AMBOS";
+
     public ClienteJpaEntity() {
     }
 
@@ -52,6 +55,9 @@ public class ClienteJpaEntity {
 
     public String getDocumentoTipo() { return documentoTipo; }
     public void setDocumentoTipo(String documentoTipo) { this.documentoTipo = documentoTipo; }
+
+    public String getCanalPreferido() { return canalPreferido; }
+    public void setCanalPreferido(String canalPreferido) { this.canalPreferido = canalPreferido; }
 
     public int getQuantidadeNoShow() { return quantidadeNoShow; }
     public void setQuantidadeNoShow(int quantidadeNoShow) { this.quantidadeNoShow = quantidadeNoShow; }

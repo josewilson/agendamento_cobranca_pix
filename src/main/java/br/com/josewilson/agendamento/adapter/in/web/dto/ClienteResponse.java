@@ -5,7 +5,8 @@ import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import java.util.UUID;
 
 public record ClienteResponse(UUID id, String nome, String email, String telefone,
-                               String documentoNumero, String documentoTipo, int quantidadeNoShow) {
+                               String documentoNumero, String documentoTipo, int quantidadeNoShow,
+                               String canalPreferido) {
 
     public static ClienteResponse de(Cliente cliente) {
         return new ClienteResponse(
@@ -15,6 +16,7 @@ public record ClienteResponse(UUID id, String nome, String email, String telefon
                 cliente.contato().telefone(),
                 cliente.documento().numero(),
                 cliente.documento().tipo().name(),
-                cliente.quantidadeNoShow());
+                cliente.quantidadeNoShow(),
+                cliente.canalPreferido().name());
     }
 }

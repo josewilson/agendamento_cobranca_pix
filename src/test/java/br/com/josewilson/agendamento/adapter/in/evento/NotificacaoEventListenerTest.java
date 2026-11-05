@@ -86,6 +86,18 @@ class NotificacaoEventListenerTest {
     }
 
     @Test
+    void deveRespeitarCanalPreferidoDoCliente() {
+        cliente.definirCanalPreferido(br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido.EMAIL);
+        listener.aoConfirmarAgendamento(new AgendamentoConfirmado(AgendamentoId.novo(), cliente.id(), Instant.now()));
+        assertThat(notificacoesCapturadas).extracting(Notificacao::canal).containsExactly(CanalNotificacao.EMAIL);
+
+        notificacoesCapturadas.clear();
+        cliente.definirCanalPreferido(br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido.WHATSAPP);
+        listener.aoConfirmarAgendamento(new AgendamentoConfirmado(AgendamentoId.novo(), cliente.id(), Instant.now()));
+        assertThat(notificacoesCapturadas).extracting(Notificacao::canal).containsExactly(CanalNotificacao.WHATSAPP);
+    }
+
+    @Test
     void deveNotificarClienteAoConfirmarAgendamento() {
         listener.aoConfirmarAgendamento(new AgendamentoConfirmado(AgendamentoId.novo(), cliente.id(), Instant.now()));
 

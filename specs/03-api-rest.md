@@ -60,7 +60,7 @@ Consulta quem está logado na sessão atual (usado pelo frontend para saber se d
 
 Cadastra um cliente. Executa `CadastrarClienteUseCase`.
 
-**Request** (`CadastrarClienteRequest`, todos `@NotBlank`):
+**Request** (`CadastrarClienteRequest`; todos `@NotBlank` exceto `canalPreferido`, opcional — `AMBOS` (padrão), `EMAIL` ou `WHATSAPP`: por quais canais o cliente recebe avisos; também aceito em `PUT /api/clientes/{id}`, e `ClienteResponse` o devolve):
 ```json
 { "nome": "Maria Silva", "email": "maria@exemplo.com", "telefone": "11987654321", "documentoNumero": "52998224725", "documentoTipo": "CPF" }
 ```
@@ -158,7 +158,7 @@ Consulta um agendamento. Executa `ConsultarAgendamentoUseCase`.
 
 ## `GET /api/agendamentos?prestadorId={uuid}`
 
-Lista os agendamentos de um prestador (qualquer status, inclusive histórico). Executa `ListarAgendamentosPorPrestadorUseCase`. **Exige login** (de qualquer prestador — ver abaixo), mas não mais de ser o próprio dono da agenda: pedido explícito do usuário (02/10/2026) para a tela de Agenda ter um seletor deixando ver a agenda de qualquer prestador, não só a própria. `prestadorId` é **opcional** — se omitido, usa o prestador da sessão (`@AuthenticationPrincipal`), mantendo o comportamento original; se informado, mostra a agenda desse prestador, mesmo que não seja quem está logado. **200 OK**, array de `AgendamentoResponse` ordenado por `inicio` ascendente (vazio se o prestador não tiver agendamentos — não há 404). **401** se não autenticado (como qualquer prestador logado pode ver a agenda de qualquer outro, a barreira aqui é só "estar logado", não "ser o dono" — risco aceito conscientemente pelo usuário, ver `specs/04-roadmap.md`). Suporta paginação opcional (`page`/`size`, ver `Paginacao`). É a tela "Agenda" do frontend: por causa da regra de nunca mostrar id na UI (ver `CLAUDE.md`), sem este endpoint não havia nenhum jeito de voltar a encontrar um agendamento depois de sair da tela em que ele foi criado.
+Lista os agendamentos de um prestador (qualquer status, inclusive histórico). Executa `ListarAgendamentosPorPrestadorUseCase`. **Exige login** (de qualquer prestador — ver abaixo), mas não mais de ser o próprio dono da agenda: pedido explícito do usuário (02/10/2026) para a tela de Agenda ter um seletor deixando ver a agenda de qualquer prestador, não só a própria. `prestadorId` é **opcional** — se omitido, usa o prestador da sessão (`@AuthenticationPrincipal`), mantendo o comportamento original; se informado, mostra a agenda desse prestador, mesmo que não seja quem está logado. **200 OK**, array de `AgendamentoResponse` ordenado por `inicio` ascendente (vazio se o prestador não tiver agendamentos — não há 404). **401** se não autenticado. Só o dono vê os detalhes: ao consultar a agenda de **outro** prestador, cada item traz apenas `prestadorId`, `inicio`, `fim` e `status` (`id`, `clienteId`, `servicoId` e valores vêm `null`) — dá pra ver quando está ocupado, não com quem nem quanto. Suporta paginação opcional (`page`/`size`, corte no banco, ver `Paginacao`). É a tela "Agenda" do frontend: por causa da regra de nunca mostrar id na UI (ver `CLAUDE.md`), sem este endpoint não havia nenhum jeito de voltar a encontrar um agendamento depois de sair da tela em que ele foi criado.
 
 ## `POST /api/agendamentos/{id}/cancelar`
 

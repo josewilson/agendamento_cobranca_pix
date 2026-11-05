@@ -33,6 +33,7 @@ describe('ClientesPage', () => {
     await usuario.type(screen.getByLabelText('Email'), 'j@x.com');
     await usuario.type(screen.getByLabelText('Telefone'), '11988887777');
     await usuario.type(screen.getByLabelText('Documento'), '12345678901');
+    await usuario.selectOptions(screen.getByLabelText('Receber avisos por'), 'Só WhatsApp');
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
     expect(api.post).toHaveBeenCalledWith('/api/clientes', {
@@ -41,6 +42,7 @@ describe('ClientesPage', () => {
       telefone: '11988887777',
       documentoNumero: '12345678901',
       documentoTipo: 'CPF',
+      canalPreferido: 'WHATSAPP',
     });
     expect(await screen.findByText(/Cliente cadastrado!/)).toBeInTheDocument();
     expect(api.get).toHaveBeenCalledTimes(2);

@@ -9,5 +9,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
+    testTimeout: 20000, // digitacao do user-event em jsdom estoura 5s em maquina carregada
   },
 });

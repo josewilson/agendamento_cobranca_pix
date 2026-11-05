@@ -1,6 +1,7 @@
 package br.com.josewilson.agendamento.adapter.out.persistence.jpa.mapper;
 
 import br.com.josewilson.agendamento.adapter.out.persistence.jpa.entity.ClienteJpaEntity;
+import br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
@@ -20,6 +21,7 @@ public final class ClienteMapper {
         entity.setDocumentoNumero(cliente.documento().numero());
         entity.setDocumentoTipo(cliente.documento().tipo().name());
         entity.setQuantidadeNoShow(cliente.quantidadeNoShow());
+        entity.setCanalPreferido(cliente.canalPreferido().name());
         return entity;
     }
 
@@ -28,6 +30,6 @@ public final class ClienteMapper {
         DocumentoFiscal documento = new DocumentoFiscal(entity.getDocumentoNumero(),
                 DocumentoFiscal.TipoDocumento.valueOf(entity.getDocumentoTipo()));
         return new Cliente(new ClienteId(entity.getId()), entity.getNome(), contato, documento,
-                entity.getQuantidadeNoShow());
+                entity.getQuantidadeNoShow(), CanalPreferido.valueOf(entity.getCanalPreferido()));
     }
 }

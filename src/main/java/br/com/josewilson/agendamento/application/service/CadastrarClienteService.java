@@ -3,6 +3,7 @@ package br.com.josewilson.agendamento.application.service;
 import br.com.josewilson.agendamento.application.port.in.CadastrarClienteCommand;
 import br.com.josewilson.agendamento.application.port.in.CadastrarClienteUseCase;
 import br.com.josewilson.agendamento.application.port.out.ClienteRepository;
+import br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
@@ -24,6 +25,9 @@ public class CadastrarClienteService implements CadastrarClienteUseCase {
         DocumentoFiscal documento = new DocumentoFiscal(command.documentoNumero(), tipo);
         Contato contato = new Contato(command.email(), command.telefone());
         Cliente cliente = new Cliente(ClienteId.novo(), command.nome(), contato, documento);
+        if (command.canalPreferido() != null) {
+            cliente.definirCanalPreferido(CanalPreferido.valueOf(command.canalPreferido().toUpperCase()));
+        }
         return clienteRepository.salvar(cliente);
     }
 }

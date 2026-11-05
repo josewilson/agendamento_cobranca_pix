@@ -21,6 +21,16 @@ class ClienteTest {
     }
 
     @Test
+    void deveTerCanalPreferidoAmbosPorPadraoEPermitirTrocar() {
+        Cliente cliente = new Cliente(ClienteId.novo(), "Maria Silva", contato, documento);
+        assertThat(cliente.canalPreferido()).isEqualTo(CanalPreferido.AMBOS);
+
+        cliente.definirCanalPreferido(CanalPreferido.WHATSAPP);
+        assertThat(cliente.canalPreferido().usaEmail()).isFalse();
+        assertThat(cliente.canalPreferido().usaWhatsapp()).isTrue();
+    }
+
+    @Test
     void deveLancarExcecaoParaNomeVazio() {
         assertThatThrownBy(() -> new Cliente(ClienteId.novo(), " ", contato, documento))
                 .isInstanceOf(IllegalArgumentException.class);

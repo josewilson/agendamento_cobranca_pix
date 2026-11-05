@@ -68,8 +68,12 @@ public class NotificacaoEventListener {
     }
 
     private void enviar(Cliente cliente, String assunto, String mensagem) {
-        enviarPorCanal(new Notificacao(CanalNotificacao.EMAIL, cliente.contato().email(), assunto, mensagem));
-        enviarPorCanal(new Notificacao(CanalNotificacao.WHATSAPP, cliente.contato().telefone(), assunto, mensagem));
+        if (cliente.canalPreferido().usaEmail()) {
+            enviarPorCanal(new Notificacao(CanalNotificacao.EMAIL, cliente.contato().email(), assunto, mensagem));
+        }
+        if (cliente.canalPreferido().usaWhatsapp()) {
+            enviarPorCanal(new Notificacao(CanalNotificacao.WHATSAPP, cliente.contato().telefone(), assunto, mensagem));
+        }
     }
 
     private void enviarPorCanal(Notificacao notificacao) {

@@ -14,6 +14,7 @@ public class Cliente {
     private Contato contato;
     private final DocumentoFiscal documento;
     private int quantidadeNoShow;
+    private CanalPreferido canalPreferido = CanalPreferido.AMBOS;
 
     public Cliente(ClienteId id, String nome, Contato contato, DocumentoFiscal documento) {
         this(id, nome, contato, documento, 0);
@@ -28,6 +29,16 @@ public class Cliente {
             throw new IllegalArgumentException("quantidadeNoShow nao pode ser negativa");
         }
         this.quantidadeNoShow = quantidadeNoShow;
+    }
+
+    public Cliente(ClienteId id, String nome, Contato contato, DocumentoFiscal documento, int quantidadeNoShow,
+                   CanalPreferido canalPreferido) {
+        this(id, nome, contato, documento, quantidadeNoShow);
+        definirCanalPreferido(canalPreferido);
+    }
+
+    public void definirCanalPreferido(CanalPreferido canalPreferido) {
+        this.canalPreferido = Objects.requireNonNull(canalPreferido, "canalPreferido nao pode ser nulo");
     }
 
     private static String validarNome(String nome) {
@@ -58,6 +69,7 @@ public class Cliente {
     public Contato contato() { return contato; }
     public DocumentoFiscal documento() { return documento; }
     public int quantidadeNoShow() { return quantidadeNoShow; }
+    public CanalPreferido canalPreferido() { return canalPreferido; }
 
     @Override
     public boolean equals(Object o) {

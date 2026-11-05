@@ -3,7 +3,7 @@ import { api } from '../api/client';
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState([]);
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF', canalPreferido: 'AMBOS' });
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(false);
@@ -27,7 +27,7 @@ export default function ClientesPage() {
     setCarregando(true);
     try {
       await api.post('/api/clientes', form);
-      setForm({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF' });
+      setForm({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF', canalPreferido: 'AMBOS' });
       setSucesso(true);
       await carregar();
     } catch (e) {
@@ -75,6 +75,17 @@ export default function ClientesPage() {
               <select value={form.documentoTipo} onChange={(e) => setForm({ ...form, documentoTipo: e.target.value })}>
                 <option value="CPF">CPF</option>
                 <option value="CNPJ">CNPJ</option>
+              </select>
+            </label>
+            <label>
+              Receber avisos por
+              <select
+                value={form.canalPreferido}
+                onChange={(e) => setForm({ ...form, canalPreferido: e.target.value })}
+              >
+                <option value="AMBOS">Email e WhatsApp</option>
+                <option value="EMAIL">Só email</option>
+                <option value="WHATSAPP">Só WhatsApp</option>
               </select>
             </label>
             <button type="submit" disabled={carregando}>
