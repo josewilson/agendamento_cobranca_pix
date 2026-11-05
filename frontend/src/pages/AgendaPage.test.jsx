@@ -91,6 +91,26 @@ describe('AgendaPage', () => {
     expect(api.get).toHaveBeenCalledWith('/api/agendamentos?prestadorId=p-2');
   });
 
+  it('na agenda de outro prestador mostra so horario/status, sem detalhes nem botao Abrir', async () => {
+    const ocupacao = { inicio: AGENDAMENTO.inicio, status: 'CONFIRMADO' };
+    api.get.mockImplementation((url) => {
+      if (url === '/api/prestadores') return Promise.resolve(PRESTADORES);
+      if (url === '/api/agendamentos?prestadorId=p-2') return Promise.resolve([ocupacao]);
+      if (url.startsWith('/api/agendamentos')) return Promise.resolve([AGENDAMENTO]);
+      if (url === '/api/clientes') return Promise.resolve(CLIENTES);
+      return Promise.resolve(SERVICOS);
+    });
+    const usuario = userEvent.setup();
+    renderPagina();
+    await screen.findByText('Maria');
+
+    await usuario.selectOptions(screen.getByLabelText('Prestador'), 'Barbearia B');
+
+    expect(await screen.findByText('CONFIRMADO', { selector: '.status-badge' })).toBeInTheDocument();
+    expect(screen.queryByText('Maria')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Abrir' })).not.toBeInTheDocument();
+  });
+
   it('abre o detalhe do agendamento ao clicar em Abrir', async () => {
     mockApi();
     const usuario = userEvent.setup();

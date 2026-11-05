@@ -86,15 +86,20 @@ public class AgendamentoController {
             @RequestParam(required = false) UUID prestadorId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
-        // prestadorId explicito permite ver a agenda de qualquer prestador (ex.: seletor na tela
-        // de Agenda do frontend), nao so a propria - exige login de algum prestador mesmo assim
-        // (ver SecurityConfig), mas nao precisa ser o mesmo que esta pedindo. Sem o parametro,
-        // mantem o comportamento antigo: a propria agenda de quem esta logado.
+        // prestadorId explicito permite ver a agenda de qualquer prestador (seletor na tela de
+        // Agenda), mas so o dono ve os detalhes; para a agenda alheia devolve apenas a ocupacao
+        // (horario + status), sem id/cliente/servico/valor.
         PrestadorId alvo = prestadorId != null ? new PrestadorId(prestadorId) : principal.prestadorId();
+        boolean dono = alvo.equals(principal.prestadorId());
         ListarAgendamentosPorPrestadorQuery query = new ListarAgendamentosPorPrestadorQuery(alvo);
-        List<AgendamentoResponse> todos = listarAgendamentosPorPrestadorUseCase.executar(query).stream()
-                .map(AgendamentoResponse::de).toList();
-        return Paginacao.aplicar(todos, page, size);
+        java.util.function.Function<Agendamento, AgendamentoResponse> mapeador =
+                dono ? AgendamentoResponse::de : AgendamentoResponse::ocupacao;
+        if (Paginacao.paginado(page, size)) {
+            return Paginacao.pagina(
+                    listarAgendamentosPorPrestadorUseCase.executar(query, Paginacao.pagina(page), Paginacao.tamanho(size)),
+                    mapeador);
+        }
+        return Paginacao.lista(listarAgendamentosPorPrestadorUseCase.executar(query).stream().map(mapeador).toList());
     }
 
     @PostMapping("/{id}/cancelar")

@@ -202,6 +202,23 @@ class AgendamentoControllerTest {
     }
 
     @Test
+    void deveEsconderDetalhesAoListarAgendaDeOutroPrestador() throws Exception {
+        Agendamento agendamento = agendamentoExemplo();
+        given(listarAgendamentosPorPrestadorUseCase.executar(any())).willReturn(List.of(agendamento));
+
+        mockMvc.perform(get("/api/agendamentos")
+                        .param("prestadorId", agendamento.prestadorId().valor().toString())
+                        .with(authentication(TestAutenticacao.doPrestador(PrestadorId.novo()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value(agendamento.status().name()))
+                .andExpect(jsonPath("$[0].inicio").exists())
+                .andExpect(jsonPath("$[0].id").doesNotExist())
+                .andExpect(jsonPath("$[0].clienteId").doesNotExist())
+                .andExpect(jsonPath("$[0].servicoId").doesNotExist())
+                .andExpect(jsonPath("$[0].valorServico").doesNotExist());
+    }
+
+    @Test
     void deveRetornar401QuandoListarSemLogin() throws Exception {
         mockMvc.perform(get("/api/agendamentos"))
                 .andExpect(status().isUnauthorized());

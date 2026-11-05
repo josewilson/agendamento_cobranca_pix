@@ -113,18 +113,18 @@ export default function AgendaPage() {
           </thead>
           <tbody>
             {agendamentos.map((a) => (
-              <tr key={a.id}>
+              <tr key={a.id ?? a.inicio}>
                 <td>{new Date(a.inicio).toLocaleString('pt-BR')}</td>
-                <td>{nomeCliente(a.clienteId)}</td>
-                <td>{nomeServico(a.servicoId)}</td>
-                <td>R$ {a.valorServico}</td>
+                <td>{a.id ? nomeCliente(a.clienteId) : "—"}</td>
+                <td>{a.id ? nomeServico(a.servicoId) : "—"}</td>
+                <td>{a.id ? `R$ ${a.valorServico}` : "—"}</td>
                 <td>
                   <span className="status-badge" data-status={a.status}>
                     {a.status}
                   </span>
                 </td>
                 <td>
-                  <button onClick={() => navigate(`/agendamentos/${a.id}`)}>Abrir</button>
+                  {a.id && <button onClick={() => navigate(`/agendamentos/${a.id}`)}>Abrir</button>}
                 </td>
               </tr>
             ))}
