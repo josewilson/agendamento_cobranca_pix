@@ -1,6 +1,6 @@
 # Casos de Uso
 
-Implementados em `src/main/java/org/example/agendamento/application/`. Cada caso de uso é uma porta de entrada (`port/in`, interface + Command/Query) implementada por um `@Service` em `service/`.
+Implementados em `src/main/java/br/com/josewilson/agendamento/application/`. Cada caso de uso é uma porta de entrada (`port/in`, interface + Command/Query) implementada por um `@Service` em `service/`.
 
 ## CriarAgendamentoUseCase
 
@@ -118,3 +118,7 @@ Terceiro item do levantamento de prontidão para produção (ver `specs/04-roadm
 | `EnviadorDeNotificacao` | `enviar(Notificacao)` + `canalSuportado()`. Em `dev`, `EnviadorDeNotificacaoFake` (um único bean acumulando qualquer canal, só para teste). Em `!dev`, três adapters reais — um por canal: `EmailEnviadorDeNotificacao` (SMTP via `JavaMailSender`, config em `spring.mail.*`/`notificacao.email.remetente`), `TwilioSmsEnviadorDeNotificacao` e `TwilioWhatsAppEnviadorDeNotificacao` (Twilio Messages API, config em `twilio.*`, compartilham `AbstractTwilioEnviadorDeNotificacao` — mesma chamada HTTP, só muda o prefixo `whatsapp:` nos números). `NotificacaoDispatcher` (application/service, não é adapter) injeta `List<EnviadorDeNotificacao>` e escolhe o enviador certo por `CanalNotificacao` — registrar um canal novo é só adicionar mais um `@Component`, o dispatcher não muda. |
 | `CalendarioExternoPort` | `sincronizarEvento(agendamentoId, titulo, descricao, periodo)` + `removerEvento(agendamentoId)`. `CalendarioExternoFake` (`@Profile("dev")`, acumula em memória) ou `GoogleCalendarAdapter` (`@Profile("!dev")`, integra com a API real do Google Calendar via conta de serviço — integração de saída pura, sem endpoint REST próprio). Config em `google-calendar.*`. |
 | `Clock` | `agora() -> Instant`. Abstrai `Instant.now()` para permitir testes determinísticos de regras sensíveis a tempo (expiração, janela de cancelamento). |
+
+## Transações e eventos (05/11/2026)
+
+`CriarAgendamentoService`, `CancelarAgendamentoService` e `ConfirmarAgendamentoService` são `@Transactional`. Em `CriarAgendamentoService` a ordem é: validar → `salvar` (flush; a constraint `agendamento_sem_sobreposicao` do banco garante que dois agendamentos ativos do mesmo prestador nunca se sobrepõem, mesmo concorrentes) → `gerarCobrancaPix` → vincular referência → publicar `AgendamentoCriado`. Os listeners de evento usam `@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` + `@Async`: efeitos colaterais externos (e-mail, WhatsApp, Google Calendar, estorno) só disparam depois do commit.

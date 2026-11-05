@@ -1,0 +1,60 @@
+package br.com.josewilson.agendamento.application.service;
+
+import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryPrestadorRepository;
+import br.com.josewilson.agendamento.application.port.in.CadastrarPrestadorCommand;
+import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
+import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class CadastrarPrestadorServiceTest {
+
+    private final InMemoryPrestadorRepository prestadorRepository = new InMemoryPrestadorRepository();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final CadastrarPrestadorService service = new CadastrarPrestadorService(prestadorRepository, passwordEncoder);
+
+    @Test
+    void deveCadastrarPrestadorComCnpjValido() {
+        CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
+                "Clinica Bem-Estar", "11987654321", "clinica@exemplo.com", "senha123", "11222333000181", "CNPJ");
+
+        Prestador prestador = service.executar(command);
+
+        assertThat(prestador.nome()).isEqualTo("Clinica Bem-Estar");
+        assertThat(prestador.telefone()).isEqualTo("11987654321");
+        assertThat(prestador.email()).isEqualTo("clinica@exemplo.com");
+        assertThat(passwordEncoder.matches("senha123", prestador.senhaHash())).isTrue();
+        assertThat(prestador.documento().numero()).isEqualTo("11222333000181");
+        assertThat(prestadorRepository.buscarPorId(prestador.id())).contains(prestador);
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoCnpjInvalido() {
+        CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
+                "Clinica Bem-Estar", "11987654321", "clinica@exemplo.com", "senha123", "00000000000000", "CNPJ");
+
+        assertThatThrownBy(() -> service.executar(command))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoTelefoneInvalido() {
+        CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
+                "Clinica Bem-Estar", "123", "clinica@exemplo.com", "senha123", "11222333000181", "CNPJ");
+
+        assertThatThrownBy(() -> service.executar(command))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoEmailInvalido() {
+        CadastrarPrestadorCommand command = new CadastrarPrestadorCommand(
+                "Clinica Bem-Estar", "11987654321", "nao-e-email", "senha123", "11222333000181", "CNPJ");
+
+        assertThatThrownBy(() -> service.executar(command))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+}

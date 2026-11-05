@@ -10,5 +10,8 @@ RUN mvn -B package -Dmaven.test.skip=true
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
+# Nao roda como root: comprometer a aplicacao nao vira acesso root no container.
+RUN addgroup -S app && adduser -S app -G app
+USER app
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

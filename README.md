@@ -302,22 +302,22 @@ cd frontend && npm test   # suíte do frontend
 
 ```
 agendamento_com_cobranca_pix/
-├── src/main/java/org/example/agendamento/
+├── src/main/java/br/com/josewilson/agendamento/
 │   ├── domain/            # Java puro — entidades, VOs, máquina de estados, eventos
 │   ├── application/       # casos de uso (ports/in), ports/out, services
 │   ├── adapter/
 │   │   ├── in/web/        # controllers REST, DTOs, security, GlobalExceptionHandler
-│   │   ├── in/evento/     # listeners de evento de domínio (@Async)
+│   │   ├── in/evento/     # listeners pós-commit (@TransactionalEventListener + @Async)
 │   │   ├── in/scheduler/  # expiração de reservas pendentes
 │   │   └── out/           # JPA, gateways de pagamento, Google Calendar, Twilio, e-mail
 │   └── config/            # CORS, Async, properties de integração
 ├── src/main/resources/
-│   └── db/migration/      # migrations Flyway
+│   └── db/migration/      # migrations Flyway (V8: constraint anti-sobreposição de horários)
 ├── src/test/java/         # espelha a estrutura de main, + architecture/
 ├── frontend/               # React + Vite, projeto Node separado
 ├── specs/                  # fonte da verdade: domínio, casos de uso, API, roadmap
 ├── docker-compose.yml
-├── Dockerfile
+├── Dockerfile             # multi-stage, imagem final roda como usuário não-root
 └── .github/workflows/ci.yml
 ```
 

@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>org.example</groupId>
+    <groupId>br.com.josewilson</groupId>
     <artifactId>agendamento_com_cobranca_pix</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>agendamento-com-cobranca-pix</name>

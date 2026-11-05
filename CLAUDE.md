@@ -113,3 +113,11 @@ Hexagonal (portas e adapters), garantida por `src/test/java/.../architecture/Arc
 - Teste do envio de e-mail: `EmailEnviadorDeNotificacaoTest` usa GreenMail (`greenmail-junit5`, servidor SMTP em memória) para verificar o e-mail recebido de verdade, sem mock do `JavaMailSender`.
 - Teste dos enviadores Twilio: `TwilioSmsEnviadorDeNotificacaoTest`/`TwilioWhatsAppEnviadorDeNotificacaoTest` usam WireMock, verificando o header `Authorization: Basic ...` e o corpo form-urlencoded (`To`/`From`/`Body`) — inclusive que o prefixo `whatsapp:` e o DDI `+55` automático saem formatados corretamente (comparação via `URLEncoder.encode` no próprio teste, para não errar a mão no percent-encoding esperado).
 - `pom.xml` registra o agente byte-buddy do Mockito via goal `properties` do `maven-dependency-plugin` mais `-javaagent` no `argLine` do surefire, seguindo a recomendação do próprio Mockito, para evitar o aviso de depreciação de carregamento dinâmico de agente da JDK.
+
+## Transações, concorrência e eventos (auditoria de 05/11/2026)
+
+- Pacote raiz é `br.com.josewilson.agendamento` (antes `org.example`). Dockerfile roda como usuário não-root.
+- Os `*AgendamentoService` que persistem + publicam evento (`Criar`/`Cancelar`/`Confirmar`) são `@Transactional`. Em `CriarAgendamentoService` o `salvar` (com `saveAndFlush`) vem **antes** de `gerarCobrancaPix` — nunca inverta, senão volta a cobrança órfã no gateway quando o banco recusa.
+- Não-sobreposição de agendamentos ativos é garantida pela constraint de exclusão da migration `V8` (Postgres `btree_gist`); `VerificadorDeConflito` é só a checagem rápida. Violação → `DataIntegrityViolationException` → 409. Qualquer mudança nos status "ativos" (`PENDENTE_PAGAMENTO`/`CONFIRMADO`) precisa de nova migration que recrie a constraint, além de `STATUS_ATIVOS` no `AgendamentoRepositoryAdapter`.
+- Listeners de evento usam `@TransactionalEventListener(fallbackExecution = true)` + `@Async("eventosExecutor")` (não `@EventListener`) — só disparam após o commit. Eventos novos seguem o mesmo padrão.
+- O `exclude` de autoconfiguração do perfil `dev` em `application.yml` usa os pacotes do Spring Boot 4 (`...hibernate.autoconfigure`, `...jdbc.autoconfigure`, `...flyway.autoconfigure`); os nomes do Boot 3 fazem o `dev` tentar conectar no Postgres.

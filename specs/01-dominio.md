@@ -1,6 +1,6 @@
 # Domínio
 
-Todo o conteúdo deste documento está implementado em `src/main/java/org/example/agendamento/domain/` — Java puro, sem dependência de framework (garantido por `ArchitectureTest`).
+Todo o conteúdo deste documento está implementado em `src/main/java/br/com/josewilson/agendamento/domain/` — Java puro, sem dependência de framework (garantido por `ArchitectureTest`).
 
 ## Entidades (identidade por ID, mutáveis)
 
@@ -47,3 +47,7 @@ Qualquer transição fora dessa tabela lança `TransicaoDeStatusInvalidaExceptio
 5. **Expiração de reserva pendente** — `Agendamento.expirarSeNecessario(agora, prazoExpiracao)` transiciona `PENDENTE_PAGAMENTO → EXPIRADO` se `agora - criadoEm >= prazoExpiracao`. O prazo usado em produção é **15 minutos** (constante em `ExpirarReservasPendentesService`).
 6. **Bloqueio por no-show** — `Cliente.registrarNoShow()` incrementa o contador; a partir de **2 no-shows**, `exigeSinalObrigatorio()` passa a `true` (ver regra 4).
 7. **Não agendar no passado** — validado exclusivamente em `Agendamento.criar(...)` (`periodo.estaNoPassado(agora)`). O factory de reconstituição `Agendamento.reconstituir(...)`, usado pelos adapters de persistência para reidratar um agendamento já existente, **não** reaplica essa validação — um agendamento concluído há anos precisa continuar carregando do banco mesmo com período no passado.
+
+## Invariante de não-sobreposição no banco (05/11/2026)
+
+A regra "um prestador não tem dois agendamentos ativos (`PENDENTE_PAGAMENTO`/`CONFIRMADO`) sobrepostos" é verificada por `VerificadorDeConflito` (domínio, rápida) e **garantida** pela constraint de exclusão `agendamento_sem_sobreposicao` (migration V8, Postgres `btree_gist`) contra requisições concorrentes. Intervalos são semiabertos `[inicio, fim)`: um terminando quando o outro começa não conflita.
