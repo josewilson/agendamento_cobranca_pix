@@ -1,19 +1,16 @@
 package br.com.josewilson.agendamento.adapter.in.web.security;
 
 import br.com.josewilson.agendamento.application.port.out.Clock;
+import br.com.josewilson.agendamento.application.port.out.TentativasDeLogin;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bloqueia tentativas de login apos falhas consecutivas, por email (nao por IP — mais simples
- * e suficiente para o escopo deste projeto; um atacante trocando de IP ainda esbarra no limite
- * por conta-alvo). Em memoria, por instancia: reinicia se a aplicacao reiniciar e nao e
- * compartilhado entre instancias num deploy com mais de uma replica — aceitavel para o escopo
- * de portfolio deste projeto (ver specs/04-roadmap.md para um backend compartilhado, ex. Redis,
- * caso isso precise escalar).
+ * e suficiente: um atacante trocando de IP ainda esbarra no limite da conta-alvo). O contador
+ * vive na porta {@link TentativasDeLogin} (tabela login_tentativa no Postgres), entao e
+ * compartilhado entre replicas e sobrevive a reinicios.
  */
 @Component
 public class LoginRateLimiter {
@@ -22,40 +19,33 @@ public class LoginRateLimiter {
     private static final Duration JANELA_BLOQUEIO = Duration.ofMinutes(5);
 
     private final Clock clock;
-    private final ConcurrentHashMap<String, Tentativas> tentativasPorEmail = new ConcurrentHashMap<>();
+    private final TentativasDeLogin tentativas;
 
-    public LoginRateLimiter(Clock clock) {
+    public LoginRateLimiter(Clock clock, TentativasDeLogin tentativas) {
         this.clock = clock;
+        this.tentativas = tentativas;
     }
 
     public boolean bloqueado(String email) {
-        Tentativas tentativas = tentativasPorEmail.get(normalizar(email));
-        if (tentativas == null || tentativas.bloqueadoAte() == null) {
-            return false;
-        }
-        if (clock.agora().isAfter(tentativas.bloqueadoAte())) {
-            tentativasPorEmail.remove(normalizar(email));
-            return false;
-        }
-        return true;
+        String chave = normalizar(email);
+        return tentativas.bloqueadoAte(chave).map(ate -> {
+            if (clock.agora().isAfter(ate)) {
+                tentativas.limpar(chave);
+                return false;
+            }
+            return true;
+        }).orElse(false);
     }
 
     public void registrarFalha(String email) {
-        tentativasPorEmail.compute(normalizar(email), (chave, atual) -> {
-            int novaContagem = (atual == null ? 0 : atual.contagem()) + 1;
-            Instant bloqueadoAte = novaContagem >= MAX_TENTATIVAS ? clock.agora().plus(JANELA_BLOQUEIO) : null;
-            return new Tentativas(novaContagem, bloqueadoAte);
-        });
+        tentativas.registrarFalha(normalizar(email), MAX_TENTATIVAS, clock.agora().plus(JANELA_BLOQUEIO));
     }
 
     public void registrarSucesso(String email) {
-        tentativasPorEmail.remove(normalizar(email));
+        tentativas.limpar(normalizar(email));
     }
 
     private static String normalizar(String email) {
         return email == null ? "" : email.trim().toLowerCase();
-    }
-
-    private record Tentativas(int contagem, Instant bloqueadoAte) {
     }
 }

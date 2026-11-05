@@ -271,7 +271,8 @@ contra uma instância real (Postgres real, não só testes unitários):
 - **Processamento assíncrono dos efeitos colaterais de domínio** (notificação, calendário,
   estorno) num pool dedicado — não compete com o pool HTTP do Tomcat, com o id de correlação de
   log propagado via `MDC` + `TaskDecorator` mesmo entre threads.
-- **Rate limiting no login** — 5 tentativas falhas bloqueiam o e-mail por 5 minutos.
+- **Rate limiting no login** — 5 tentativas falhas bloqueiam o e-mail por 5 minutos; contador na tabela `login_tentativa` (Postgres), compartilhado entre réplicas.
+- **Consistência**: casos de uso `@Transactional` (persiste antes de cobrar no gateway, sem cobrança órfã), constraint de exclusão no Postgres contra reserva dupla concorrente e eventos disparados só após o commit (`@TransactionalEventListener`).
 - **Métricas Prometheus** (`/actuator/prometheus`) e **correlação de log por requisição**
   (`X-Request-Id`), inclusive em efeitos assíncronos.
 - **Cookies com `Secure`/`SameSite` configuráveis** por variável de ambiente, política de senha
@@ -312,7 +313,7 @@ agendamento_com_cobranca_pix/
 │   │   └── out/           # JPA, gateways de pagamento, Google Calendar, Twilio, e-mail
 │   └── config/            # CORS, Async, properties de integração
 ├── src/main/resources/
-│   └── db/migration/      # migrations Flyway (V8: constraint anti-sobreposição de horários)
+│   └── db/migration/      # migrations Flyway (V8: anti-sobreposição de horários; V9: tentativas de login)
 ├── src/test/java/         # espelha a estrutura de main, + architecture/
 ├── frontend/               # React + Vite, projeto Node separado
 ├── specs/                  # fonte da verdade: domínio, casos de uso, API, roadmap

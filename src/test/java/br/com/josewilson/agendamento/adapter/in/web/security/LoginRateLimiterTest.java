@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LoginRateLimiterTest {
 
     private final RelogioFixo relogio = new RelogioFixo(Instant.parse("2026-01-01T10:00:00Z"));
-    private final LoginRateLimiter rateLimiter = new LoginRateLimiter(relogio);
+    private final LoginRateLimiter rateLimiter = new LoginRateLimiter(relogio, new br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryTentativasDeLogin());
 
     @Test
     void naoBloqueiaAntesDoLimiteDeTentativas() {
