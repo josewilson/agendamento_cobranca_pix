@@ -115,7 +115,7 @@ Hexagonal (portas e adapters), garantida por `src/test/java/.../architecture/Arc
 - Teste do scheduler: chamada direta ao método do `ExpiracaoReservaScheduler` com o caso de uso mockado, sem depender da infraestrutura de agendamento do Spring.
 - Teste do envio de e-mail: `EmailEnviadorDeNotificacaoTest` usa GreenMail (`greenmail-junit5`, servidor SMTP em memória) para verificar o e-mail recebido de verdade, sem mock do `JavaMailSender`.
 - Teste dos enviadores Twilio: `TwilioSmsEnviadorDeNotificacaoTest`/`TwilioWhatsAppEnviadorDeNotificacaoTest` usam WireMock, verificando o header `Authorization: Basic ...` e o corpo form-urlencoded (`To`/`From`/`Body`) — inclusive que o prefixo `whatsapp:` e o DDI `+55` automático saem formatados corretamente (comparação via `URLEncoder.encode` no próprio teste, para não errar a mão no percent-encoding esperado).
-- `pom.xml` registra o agente byte-buddy do Mockito via goal `properties` do `maven-dependency-plugin` mais `-javaagent` no `argLine` do surefire, seguindo a recomendação do próprio Mockito, para evitar o aviso de depreciação de carregamento dinâmico de agente da JDK.
+- `pom.xml` registra o agente do Mockito com `-javaagent` no `argLine` do surefire apontando para `${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar` (para evitar o aviso de carregamento dinâmico de agente da JDK). Não usar a propriedade `${org.mockito:mockito-core:jar}` do `maven-dependency-plugin`: funciona no Maven, mas a IDE a marca como erro ("Cannot resolve symbol").
 
 ## Transações, concorrência e eventos (auditoria de 05/11/2026)
 
