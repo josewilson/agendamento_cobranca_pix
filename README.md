@@ -19,7 +19,7 @@
 
 <p align="center">
   <img alt="CI" src="https://github.com/josewilson/agendamento_cobranca_pix/actions/workflows/ci.yml/badge.svg">
-  <img alt="Testes" src="https://img.shields.io/badge/testes-242%20passando-brightgreen?style=flat-square">
+  <img alt="Testes" src="https://img.shields.io/badge/testes-345%20passando-brightgreen?style=flat-square">
   <img alt="Cobertura de arquitetura" src="https://img.shields.io/badge/ArchUnit-regras%20garantidas-success?style=flat-square">
   <img alt="npm audit" src="https://img.shields.io/badge/npm%20audit-0%20vulnerabilidades-brightgreen?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-ativo-success?style=flat-square">

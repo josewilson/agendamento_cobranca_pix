@@ -21,7 +21,8 @@ import java.util.Optional;
 public class AgendamentoRepositoryAdapter implements AgendamentoRepository {
 
     private static final List<String> STATUS_ATIVOS = List.of(
-            StatusAgendamento.PENDENTE_PAGAMENTO.name(), StatusAgendamento.CONFIRMADO.name());
+            StatusAgendamento.PENDENTE_PAGAMENTO.name(), StatusAgendamento.CONFIRMADO.name(),
+            StatusAgendamento.EM_ANDAMENTO.name());
 
     private final AgendamentoJpaRepository jpaRepository;
 

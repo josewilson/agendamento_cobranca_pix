@@ -119,9 +119,11 @@ Hexagonal (portas e adapters), garantida por `src/test/java/.../architecture/Arc
 
 ## Transações, concorrência e eventos (auditoria de 05/11/2026)
 
+- `MarcarNoShowService`, `ExpirarReservasPendentesService` e `CadastrarPrestadorService` também são `@Transactional` (gravam mais de uma coisa: agendamento+cliente, vários agendamentos, prestador+profissional). `CriarAgendamentoConcorrenteIT` (sem `@Transactional` no teste, 5 threads com `CountDownLatch`) prova que pedidos simultâneos para o mesmo horário geram exatamente um agendamento.
+
 - Pacote raiz é `br.com.josewilson.agendamento` (antes `org.example`). Dockerfile roda como usuário não-root.
 - Os `*AgendamentoService` que persistem + publicam evento (`Criar`/`Cancelar`/`Confirmar`) são `@Transactional`. Em `CriarAgendamentoService` o `salvar` (com `saveAndFlush`) vem **antes** de `gerarCobrancaPix` — nunca inverta, senão volta a cobrança órfã no gateway quando o banco recusa.
-- Não-sobreposição de agendamentos ativos é garantida pela constraint de exclusão da migration `V8` (Postgres `btree_gist`); `VerificadorDeConflito` é só a checagem rápida. Violação → `DataIntegrityViolationException` → 409. Qualquer mudança nos status "ativos" (`PENDENTE_PAGAMENTO`/`CONFIRMADO`) precisa de nova migration que recrie a constraint, além de `STATUS_ATIVOS` no `AgendamentoRepositoryAdapter`.
+- Não-sobreposição de agendamentos ativos é garantida pela constraint de exclusão da migration `V8`, recriada pela `V13` (por profissional) e pela `V14` (agora inclui também `EM_ANDAMENTO`) (Postgres `btree_gist`); `VerificadorDeConflito` é só a checagem rápida. Violação → `DataIntegrityViolationException` → 409. Qualquer mudança nos status "ativos" (`PENDENTE_PAGAMENTO`/`CONFIRMADO`) precisa de nova migration que recrie a constraint, além de `STATUS_ATIVOS` no `AgendamentoRepositoryAdapter`.
 - Listeners de evento usam `@TransactionalEventListener(fallbackExecution = true)` + `@Async("eventosExecutor")` (não `@EventListener`) — só disparam após o commit. Eventos novos seguem o mesmo padrão.
 - O `exclude` de autoconfiguração do perfil `dev` em `application.yml` usa os pacotes do Spring Boot 4 (`...hibernate.autoconfigure`, `...jdbc.autoconfigure`, `...flyway.autoconfigure`); os nomes do Boot 3 fazem o `dev` tentar conectar no Postgres.
 - `CriarAgendamentoRollbackIT` (persistência, **sem** `@Transactional` no teste, de propósito) verifica o rollback do caso de uso quando o gateway falha; `TentativasDeLoginAdapterIT` cobre o rate limiter no Postgres.

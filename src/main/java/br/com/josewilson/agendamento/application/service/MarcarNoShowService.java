@@ -9,8 +9,10 @@ import br.com.josewilson.agendamento.application.port.out.ClienteRepository;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class MarcarNoShowService implements MarcarNoShowUseCase {
 
     private final AgendamentoRepository agendamentoRepository;

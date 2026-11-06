@@ -12,8 +12,10 @@ import br.com.josewilson.agendamento.domain.model.shared.DocumentoFiscal;
 import br.com.josewilson.agendamento.domain.model.shared.PoliticaCancelamento;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class CadastrarPrestadorService implements CadastrarPrestadorUseCase {
 
     private final PrestadorRepository prestadorRepository;

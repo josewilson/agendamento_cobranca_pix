@@ -186,4 +186,18 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
         assertThat(agendamentoRepository.buscarAtivosPorProfissional(outro.id())).hasSize(1);
         assertThat(agendamentoRepository.buscarAtivosPorProfissional(profissional.id())).hasSize(1);
     }
+    @Test
+    void atendimentoEmAndamentoTambemOcupaOHorario() {
+        Instant agora = Instant.now();
+        Instant inicio = agora.plus(Duration.ofDays(1));
+        Agendamento emAndamento = novoAgendamento(agora, new Periodo(inicio, inicio.plus(Duration.ofMinutes(30))), Dinheiro.ZERO);
+        emAndamento.iniciar();
+        agendamentoRepository.salvar(emAndamento);
+
+        assertThat(agendamentoRepository.buscarAtivosPorProfissional(profissional.id())).hasSize(1);
+        Agendamento sobreposto = novoAgendamento(agora,
+                new Periodo(inicio.plus(Duration.ofMinutes(10)), inicio.plus(Duration.ofMinutes(40))), Dinheiro.ZERO);
+        assertThatThrownBy(() -> agendamentoRepository.salvar(sobreposto))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
 }

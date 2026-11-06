@@ -22,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InMemoryAgendamentoRepository implements AgendamentoRepository {
 
     private static final Set<StatusAgendamento> STATUS_ATIVOS =
-            Set.of(StatusAgendamento.PENDENTE_PAGAMENTO, StatusAgendamento.CONFIRMADO);
+            Set.of(StatusAgendamento.PENDENTE_PAGAMENTO, StatusAgendamento.CONFIRMADO,
+                    StatusAgendamento.EM_ANDAMENTO);
 
     private final Map<AgendamentoId, Agendamento> agendamentos = new ConcurrentHashMap<>();
 

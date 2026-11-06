@@ -5,12 +5,14 @@ import br.com.josewilson.agendamento.application.port.out.AgendamentoRepository;
 import br.com.josewilson.agendamento.application.port.out.Clock;
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 @Service
+@Transactional
 public class ExpirarReservasPendentesService implements ExpirarReservasPendentesUseCase {
 
     private static final Duration PRAZO_EXPIRACAO = Duration.ofMinutes(15);

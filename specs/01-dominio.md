@@ -52,7 +52,7 @@ Qualquer transição fora dessa tabela lança `TransicaoDeStatusInvalidaExceptio
 
 ## Invariante de não-sobreposição no banco (05/11/2026)
 
-A regra "um prestador não tem dois agendamentos ativos (`PENDENTE_PAGAMENTO`/`CONFIRMADO`) sobrepostos" é verificada por `VerificadorDeConflito` (domínio, rápida) e **garantida** pela constraint de exclusão `agendamento_sem_sobreposicao` (migration V8, Postgres `btree_gist`) contra requisições concorrentes. Intervalos são semiabertos `[inicio, fim)`: um terminando quando o outro começa não conflita.
+A regra "um prestador não tem dois agendamentos ativos (`PENDENTE_PAGAMENTO`/`CONFIRMADO`/`EM_ANDAMENTO`) sobrepostos" é verificada por `VerificadorDeConflito` (domínio, rápida) e **garantida** pela constraint de exclusão `agendamento_sem_sobreposicao` (migration V8, Postgres `btree_gist`) contra requisições concorrentes. Intervalos são semiabertos `[inicio, fim)`: um terminando quando o outro começa não conflita.
 
 ## Profissional e bloqueio de agenda (05/11/2026)
 
