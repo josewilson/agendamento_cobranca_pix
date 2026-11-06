@@ -48,7 +48,7 @@ O `agendamentoId` chega diretamente no comando porque, ao gerar a cobrança Pix,
 - `AsaasWebhookController` (`POST /api/webhooks/asaas`) — o payload do Asaas já traz o status (`payment.status`/`event`), confirma direto.
 - `MercadoPagoWebhookController` (`POST /api/webhooks/mercadopago`) — o payload do Mercado Pago só traz o id do pagamento (`data.id`), não o status; o controller consulta de volta via `MercadoPagoGatewayAdapter.consultarPagamento(id)` antes de decidir `pago`.
 
-Os dois controllers só ficam ativos quando o gateway correspondente está configurado (`@ConditionalOnProperty(name = "pagamento.gateway", ...)`, ver tabela de portas abaixo) — não faz sentido expor o webhook de um gateway que não está em uso. O `WebhookPagamentoController` genérico (`/api/webhooks/pagamento`, corpo `{agendamentoId, pago}`) continua existindo à parte, sempre ativo, útil para testes manuais.
+Os dois controllers só ficam ativos quando o gateway correspondente está configurado (`@ConditionalOnProperty(name = "pagamento.gateway", ...)`, ver tabela de portas abaixo) — não faz sentido expor o webhook de um gateway que não está em uso. O antigo webhook genérico público (`/api/webhooks/pagamento`) foi removido em 06/11/2026 (qualquer um confirmava um agendamento só com o id); no lugar, `SimulacaoPagamentoController` (`POST /api/agendamentos/{id}/simular-pagamento`), desligado por padrão e só para o prestador dono — ver `03-api-rest.md`.
 
 ## ConsultarAgendamentoUseCase
 

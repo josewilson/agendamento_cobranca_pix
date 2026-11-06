@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * Login por sessao (cookie) de Prestador (ROLE_PRESTADOR) e de Cliente (ROLE_CLIENTE) — ver CLAUDE.md.
- * Publico: listar prestador/servico/profissional, cadastrar prestador e cliente, webhooks. Cliente logado:
+ * Publico: listar prestador/servico/profissional, cadastrar prestador e cliente, webhooks assinados do Asaas/Mercado Pago. Cliente logado:
  * criar agendamento e editar o proprio cadastro; consultar/cancelar agendamento exige ser o cliente ou o
  * prestador dono (checado no controller, ver AutorizacaoAgendamento); gestao (agenda, servicos,
  * profissionais, no-show, lista de clientes) e so de Prestador.
@@ -131,6 +131,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/agendamentos").hasRole("CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/agendamentos").hasRole("PRESTADOR")
                         .requestMatchers(HttpMethod.POST, "/api/agendamentos/*/no-show").hasRole("PRESTADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/agendamentos/*/simular-pagamento").hasRole("PRESTADOR")
                         .requestMatchers("/api/webhooks/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated());

@@ -68,6 +68,10 @@ logging:
 app:
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  # "Simular pagamento" (POST /api/agendamentos/{id}/simular-pagamento): so para demonstracao/testes, sem gateway
+  # de verdade. Desligado por padrao — ligue com APP_SIMULACAO_PAGAMENTO=true so em ambiente local.
+  simulacao-pagamento:
+    habilitada: ${APP_SIMULACAO_PAGAMENTO:false}
 
 # "secure: false" e "same-site: lax" sao os defaults certos pra rodar em http://localhost (o
 # browser recusa um cookie "secure" fora de HTTPS, o que quebraria o login local). Ao sair de

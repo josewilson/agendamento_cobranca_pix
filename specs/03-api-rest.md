@@ -190,16 +190,9 @@ Cadastra / renomeia / exclui um profissional do estabelecimento logado (`{ "nome
 
 Horários bloqueados na agenda do profissional. `POST` recebe `{ "inicio", "fim", "motivo" }` (`motivo` opcional) e devolve `{ id, inicio, fim, motivo }`. **Exige login de Prestador dono** (`403` caso contrário). Erros: `400` (período no passado), `409` (conflita com agendamento ativo ou com outro bloqueio do mesmo profissional).
 
-## `POST /api/webhooks/pagamento`
+## `POST /api/agendamentos/{id}/simular-pagamento`
 
-Callback de confirmação de pagamento. Executa `ProcessarWebhookPagamentoUseCase`.
-
-**Request** (`WebhookPagamentoRequest`):
-```json
-{ "agendamentoId": "uuid", "pago": true }
-```
-
-**204 No Content**. **400** se `agendamentoId` ausente. Endpoint genérico/manual — não é o que o Asaas realmente chama (ver abaixo).
+Simula a confirmação do pagamento (demonstração/testes, sem gateway real). Substitui o antigo webhook genérico `POST /api/webhooks/pagamento`, que era público e sem assinatura — qualquer um com o id de um agendamento o confirmava. Agora: **só existe com `app.simulacao-pagamento.habilitada=true`** (`APP_SIMULACAO_PAGAMENTO`, padrão `false`: sem a propriedade a rota responde 404); fica **fora de `/api/webhooks/**`** (exige sessão e CSRF); **só o prestador dono do agendamento** (`403` para cliente ou outro prestador, `401` sem login). Sem corpo; **204 No Content**. Executa `ProcessarWebhookPagamentoUseCase`.
 
 ## `POST /api/webhooks/asaas`
 
@@ -250,7 +243,7 @@ Liveness/readiness para orquestrador ou monitoramento. **200 OK**: `{ "status": 
 
 ---
 
-`/api/webhooks/asaas`, `/api/webhooks/mercadopago` e o `/api/webhooks/pagamento` genérico acima são os únicos caminhos que confirmam um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
+`/api/webhooks/asaas` e `/api/webhooks/mercadopago` (assinados) — mais o `simular-pagamento` acima, desligado por padrão — são os únicos caminhos que confirmam um agendamento — propositalmente não existe `POST /api/agendamentos/{id}/confirmar` manual.
 
 ## Tratamento de erros (`GlobalExceptionHandler`)
 

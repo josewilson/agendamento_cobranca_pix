@@ -29,7 +29,7 @@ export default function AgendamentoPage() {
     setCarregando(true);
     try {
       if (acao === 'pagar') {
-        await api.post('/api/webhooks/pagamento', { agendamentoId: id, pago: true });
+        await api.post(`/api/agendamentos/${id}/simular-pagamento`, {});
       } else if (acao === 'cancelar') {
         setResultadoCancelamento(await api.post(`/api/agendamentos/${id}/cancelar`, {}));
       } else if (acao === 'no-show') {
@@ -59,9 +59,11 @@ export default function AgendamentoPage() {
       <p>Valor do sinal: R$ {agendamento.valorSinal}</p>
 
       <div className="acoes">
-        <button onClick={() => executar('pagar')} disabled={carregando || agendamento.status !== 'PENDENTE_PAGAMENTO'}>
-          Simular pagamento
-        </button>
+        {prestador && (
+          <button onClick={() => executar('pagar')} disabled={carregando || agendamento.status !== 'PENDENTE_PAGAMENTO'}>
+            Simular pagamento
+          </button>
+        )}
         <button onClick={() => executar('cancelar')} disabled={carregando}>
           Cancelar
         </button>

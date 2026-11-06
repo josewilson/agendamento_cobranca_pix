@@ -68,7 +68,7 @@ describe('AgendamentoPage', () => {
 
     await usuario.click(await screen.findByRole('button', { name: 'Simular pagamento' }));
 
-    expect(api.post).toHaveBeenCalledWith('/api/webhooks/pagamento', { agendamentoId: ID, pago: true });
+    expect(api.post).toHaveBeenCalledWith(`/api/agendamentos/${ID}/simular-pagamento`, {});
     expect(await screen.findByText('CONFIRMADO')).toBeInTheDocument();
   });
 
@@ -83,6 +83,15 @@ describe('AgendamentoPage', () => {
     expect(api.post).toHaveBeenCalledWith(`/api/agendamentos/${ID}/cancelar`, {});
     expect(await screen.findByText('Valor retido: R$ 30.00')).toBeInTheDocument();
     expect(screen.getByText('Valor reembolsado: R$ 0.00')).toBeInTheDocument();
+  });
+
+  it('cliente nao ve o botao de simular pagamento (nao pode se "pagar")', async () => {
+    useAuth.mockReturnValue({ prestador: null, cliente: { clienteId: 'c-1', nome: 'Maria' } });
+    api.get.mockResolvedValue(agendamento('PENDENTE_PAGAMENTO'));
+    renderPagina();
+
+    expect(await screen.findByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Simular pagamento' })).not.toBeInTheDocument();
   });
 
   it('cliente nao ve o botao de no-show', async () => {
