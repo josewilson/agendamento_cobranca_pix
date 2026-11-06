@@ -9,6 +9,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
@@ -39,8 +40,8 @@ public class AgendamentoRepositoryAdapter implements AgendamentoRepository {
     }
 
     @Override
-    public List<Agendamento> buscarAtivosPorPrestador(PrestadorId prestadorId) {
-        return jpaRepository.findByPrestadorIdAndStatusIn(prestadorId.valor(), STATUS_ATIVOS).stream()
+    public List<Agendamento> buscarAtivosPorProfissional(ProfissionalId profissionalId) {
+        return jpaRepository.findByProfissionalIdAndStatusIn(profissionalId.valor(), STATUS_ATIVOS).stream()
                 .map(AgendamentoMapper::paraDominio)
                 .toList();
     }

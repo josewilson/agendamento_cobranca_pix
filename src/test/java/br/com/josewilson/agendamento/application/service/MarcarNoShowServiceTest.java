@@ -10,6 +10,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
@@ -51,7 +52,7 @@ class MarcarNoShowServiceTest {
     private Agendamento agendamentoJaIniciadoDoCliente() {
         Periodo periodo = new Periodo(AGORA.minus(Duration.ofHours(1)), AGORA.minus(Duration.ofMinutes(30)));
         Agendamento agendamento = Agendamento.criar(AgendamentoId.novo(), PrestadorId.novo(), cliente.id(),
-                ServicoId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.ZERO,
+                ServicoId.novo(), ProfissionalId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.ZERO,
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)), AGORA.minus(Duration.ofDays(1)));
         agendamentoRepository.salvar(agendamento);
         return agendamento;
@@ -79,7 +80,7 @@ class MarcarNoShowServiceTest {
     void deveLancarExcecaoQuandoClienteDoAgendamentoNaoEncontrado() {
         Periodo periodo = new Periodo(AGORA.minus(Duration.ofHours(1)), AGORA.minus(Duration.ofMinutes(30)));
         Agendamento agendamento = Agendamento.criar(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
-                ServicoId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.ZERO,
+                ServicoId.novo(), ProfissionalId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.ZERO,
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)), AGORA.minus(Duration.ofDays(1)));
         agendamentoRepository.salvar(agendamento);
 

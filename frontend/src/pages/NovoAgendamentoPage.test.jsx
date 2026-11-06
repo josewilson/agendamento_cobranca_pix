@@ -4,13 +4,17 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import NovoAgendamentoPage from './NovoAgendamentoPage.jsx';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 vi.mock('../api/client', () => ({ api: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('../auth/AuthContext', () => ({ useAuth: vi.fn() }));
+
+let PROFISSIONAIS = [{ id: 'pr-1', nome: 'Dra. Ana' }];
 
 function mockListas() {
   api.get.mockImplementation((url) => {
     if (url === '/api/prestadores') return Promise.resolve([{ id: 'p-1', nome: 'Clinica A' }]);
-    if (url === '/api/clientes') return Promise.resolve([{ id: 'c-1', nome: 'Maria' }]);
+    if (url === '/api/profissionais?prestadorId=p-1') return Promise.resolve(PROFISSIONAIS);
     if (url === '/api/servicos?prestadorId=p-1') {
       return Promise.resolve([{ id: 's-1', nome: 'Corte', duracaoMinutos: 45, preco: '80.00' }]);
     }
@@ -32,14 +36,44 @@ function renderPagina() {
 async function preencherFormulario(usuario) {
   await usuario.selectOptions(await screen.findByLabelText('Prestador'), 'Clinica A');
   await usuario.selectOptions(screen.getByLabelText('Serviço'), await screen.findByRole('option', { name: /Corte/ }));
-  await usuario.selectOptions(screen.getByLabelText('Cliente'), 'Maria');
   fireEvent.change(screen.getByLabelText('Início'), { target: { value: '2030-01-10T10:00' } });
 }
 
 describe('NovoAgendamentoPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    PROFISSIONAIS = [{ id: 'pr-1', nome: 'Dra. Ana' }];
+    useAuth.mockReturnValue({ cliente: { clienteId: 'c-1', nome: 'Maria Silva' } });
     mockListas();
+  });
+
+  it('com mais de um profissional exige escolher e envia o escolhido', async () => {
+    PROFISSIONAIS = [
+      { id: 'pr-1', nome: 'Dra. Ana' },
+      { id: 'pr-2', nome: 'Dr. Beto' },
+    ];
+    api.post.mockResolvedValue({ agendamento: { id: 'ag-1', status: 'CONFIRMADO', valorSinal: '0.00' }, cobranca: null });
+    const usuario = userEvent.setup();
+    renderPagina();
+
+    await screen.findByRole('option', { name: 'Clinica A' });
+    await usuario.selectOptions(await screen.findByLabelText('Prestador'), 'Clinica A');
+    await usuario.selectOptions(screen.getByLabelText('Serviço'), await screen.findByRole('option', { name: /Corte/ }));
+    fireEvent.change(screen.getByLabelText('Início'), { target: { value: '2030-01-10T10:00' } });
+    expect(screen.getByRole('button', { name: 'Agendar' })).toBeDisabled(); // falta o profissional
+
+    await usuario.selectOptions(screen.getByLabelText('Profissional'), 'Dr. Beto');
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }));
+
+    expect(api.post).toHaveBeenCalledWith('/api/agendamentos', expect.objectContaining({ profissionalId: 'pr-2' }));
+  });
+
+  it('mostra com quem esta agendando e nao pede o cliente (vem da sessao)', async () => {
+    renderPagina();
+
+    expect(await screen.findByText('Maria Silva')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Cliente')).not.toBeInTheDocument();
+    expect(api.get).not.toHaveBeenCalledWith('/api/clientes');
   });
 
   it('mantem Serviço desabilitado e Agendar bloqueado ate escolher prestador e serviço', async () => {
@@ -60,8 +94,8 @@ describe('NovoAgendamentoPage', () => {
     const inicio = new Date('2030-01-10T10:00');
     expect(api.post).toHaveBeenCalledWith('/api/agendamentos', {
       prestadorId: 'p-1',
-      clienteId: 'c-1',
       servicoId: 's-1',
+      profissionalId: 'pr-1',
       inicio: inicio.toISOString(),
       fim: new Date(inicio.getTime() + 45 * 60000).toISOString(),
     });

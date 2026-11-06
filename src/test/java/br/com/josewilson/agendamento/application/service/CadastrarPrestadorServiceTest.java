@@ -14,7 +14,9 @@ class CadastrarPrestadorServiceTest {
 
     private final InMemoryPrestadorRepository prestadorRepository = new InMemoryPrestadorRepository();
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private final CadastrarPrestadorService service = new CadastrarPrestadorService(prestadorRepository, passwordEncoder);
+    private final br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryProfissionalRepository profissionalRepository =
+            new br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryProfissionalRepository();
+    private final CadastrarPrestadorService service = new CadastrarPrestadorService(prestadorRepository, passwordEncoder, profissionalRepository);
 
     @Test
     void deveCadastrarPrestadorComCnpjValido() {
@@ -56,5 +58,13 @@ class CadastrarPrestadorServiceTest {
 
         assertThatThrownBy(() -> service.executar(command))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test
+    void deveCriarProfissionalPadraoComONomeDoPrestador() {
+        Prestador prestador = service.executar(new CadastrarPrestadorCommand(
+                "Clinica Bem-Estar", "11987654321", "clinica@exemplo.com", "senha123", "11222333000181", "CNPJ"));
+
+        assertThat(profissionalRepository.buscarPorEstabelecimento(prestador.id()))
+                .singleElement().satisfies(p -> assertThat(p.nome()).isEqualTo("Clinica Bem-Estar"));
     }
 }

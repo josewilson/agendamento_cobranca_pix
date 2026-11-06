@@ -3,6 +3,7 @@ package br.com.josewilson.agendamento.domain.model.agendamento;
 import br.com.josewilson.agendamento.domain.exception.TransicaoDeStatusInvalidaException;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -19,6 +20,7 @@ public class Agendamento {
     private final PrestadorId prestadorId;
     private final ClienteId clienteId;
     private final ServicoId servicoId;
+    private final ProfissionalId profissionalId;
     private final Periodo periodo;
     private final Dinheiro valorServico;
     private final Dinheiro valorSinal;
@@ -28,6 +30,7 @@ public class Agendamento {
     private String referenciaPagamento;
 
     private Agendamento(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId, ServicoId servicoId,
+                         ProfissionalId profissionalId,
                          Periodo periodo, Dinheiro valorServico, Dinheiro valorSinal,
                          PoliticaCancelamento politicaAplicada, Instant criadoEm, StatusAgendamento status,
                          String referenciaPagamento) {
@@ -35,6 +38,7 @@ public class Agendamento {
         this.prestadorId = prestadorId;
         this.clienteId = clienteId;
         this.servicoId = servicoId;
+        this.profissionalId = profissionalId;
         this.periodo = periodo;
         this.valorServico = valorServico;
         this.valorSinal = valorSinal;
@@ -45,12 +49,14 @@ public class Agendamento {
     }
 
     public static Agendamento criar(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId,
-                                     ServicoId servicoId, Periodo periodo, Dinheiro valorServico,
+                                     ServicoId servicoId, ProfissionalId profissionalId,
+                                     Periodo periodo, Dinheiro valorServico,
                                      Dinheiro valorSinal, PoliticaCancelamento politicaAplicada, Instant agora) {
         Objects.requireNonNull(id, "id nao pode ser nulo");
         Objects.requireNonNull(prestadorId, "prestadorId nao pode ser nulo");
         Objects.requireNonNull(clienteId, "clienteId nao pode ser nulo");
         Objects.requireNonNull(servicoId, "servicoId nao pode ser nulo");
+        Objects.requireNonNull(profissionalId, "profissionalId nao pode ser nulo");
         Objects.requireNonNull(periodo, "periodo nao pode ser nulo");
         Objects.requireNonNull(valorServico, "valorServico nao pode ser nulo");
         Objects.requireNonNull(valorSinal, "valorSinal nao pode ser nulo");
@@ -62,7 +68,7 @@ public class Agendamento {
         StatusAgendamento statusInicial = valorSinal.valor().signum() > 0
                 ? StatusAgendamento.PENDENTE_PAGAMENTO
                 : StatusAgendamento.CONFIRMADO;
-        return new Agendamento(id, prestadorId, clienteId, servicoId, periodo, valorServico, valorSinal,
+        return new Agendamento(id, prestadorId, clienteId, servicoId, profissionalId, periodo, valorServico, valorSinal,
                 politicaAplicada, agora, statusInicial, null);
     }
 
@@ -72,20 +78,22 @@ public class Agendamento {
      * Uso exclusivo de adapters de persistencia.
      */
     public static Agendamento reconstituir(AgendamentoId id, PrestadorId prestadorId, ClienteId clienteId,
-                                            ServicoId servicoId, Periodo periodo, Dinheiro valorServico,
+                                            ServicoId servicoId, ProfissionalId profissionalId,
+                                            Periodo periodo, Dinheiro valorServico,
                                             Dinheiro valorSinal, PoliticaCancelamento politicaAplicada,
                                             Instant criadoEm, StatusAgendamento status, String referenciaPagamento) {
         Objects.requireNonNull(id, "id nao pode ser nulo");
         Objects.requireNonNull(prestadorId, "prestadorId nao pode ser nulo");
         Objects.requireNonNull(clienteId, "clienteId nao pode ser nulo");
         Objects.requireNonNull(servicoId, "servicoId nao pode ser nulo");
+        Objects.requireNonNull(profissionalId, "profissionalId nao pode ser nulo");
         Objects.requireNonNull(periodo, "periodo nao pode ser nulo");
         Objects.requireNonNull(valorServico, "valorServico nao pode ser nulo");
         Objects.requireNonNull(valorSinal, "valorSinal nao pode ser nulo");
         Objects.requireNonNull(politicaAplicada, "politicaAplicada nao pode ser nula");
         Objects.requireNonNull(criadoEm, "criadoEm nao pode ser nulo");
         Objects.requireNonNull(status, "status nao pode ser nulo");
-        return new Agendamento(id, prestadorId, clienteId, servicoId, periodo, valorServico, valorSinal,
+        return new Agendamento(id, prestadorId, clienteId, servicoId, profissionalId, periodo, valorServico, valorSinal,
                 politicaAplicada, criadoEm, status, referenciaPagamento);
     }
 
@@ -157,6 +165,7 @@ public class Agendamento {
 
     public AgendamentoId id() { return id; }
     public PrestadorId prestadorId() { return prestadorId; }
+    public ProfissionalId profissionalId() { return profissionalId; }
     public ClienteId clienteId() { return clienteId; }
     public ServicoId servicoId() { return servicoId; }
     public Periodo periodo() { return periodo; }

@@ -27,10 +27,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Login simples de Prestador (sessao via cookie) — ver CLAUDE.md. Cliente continua sem login
- * (decisao explicita de escopo): o fluxo publico de reserva (listar prestador/servico, criar
- * agendamento, pagar, cancelar, marcar no-show) fica liberado; so a area de gestao do prestador
- * (agenda propria, cadastro/edicao de servico) exige autenticacao.
+ * Login por sessao (cookie) de Prestador (ROLE_PRESTADOR) e de Cliente (ROLE_CLIENTE) — ver CLAUDE.md.
+ * Publico: listar prestador/servico/profissional, cadastrar prestador e cliente, webhooks. Cliente logado:
+ * criar agendamento e editar o proprio cadastro; consultar/cancelar agendamento exige ser o cliente ou o
+ * prestador dono (checado no controller, ver AutorizacaoAgendamento); gestao (agenda, servicos,
+ * profissionais, no-show, lista de clientes) e so de Prestador.
  *
  * <p>CORS vive só aqui (ver {@link #corsConfigurationSource()}) — {@code WebConfig} foi removido
  * nesta sessão porque a config de CORS estava duplicada entre o {@code WebMvcConfigurer} dele e
@@ -115,15 +116,21 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/cliente/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/prestadores").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/prestadores").permitAll()
-                        .requestMatchers("/api/clientes/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/prestadores/*").hasRole("PRESTADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/clientes").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/clientes").hasRole("PRESTADOR")
+                        .requestMatchers("/api/clientes/**").hasRole("CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/servicos").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/agendamentos").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/agendamentos/*").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/agendamentos/*/cancelar").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/agendamentos/*/no-show").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/profissionais").permitAll()
+                        .requestMatchers("/api/profissionais/**").hasRole("PRESTADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/profissionais").hasRole("PRESTADOR")
+                        .requestMatchers("/api/servicos/**").hasRole("PRESTADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/agendamentos").hasRole("CLIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/agendamentos").hasRole("PRESTADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/agendamentos/*/no-show").hasRole("PRESTADOR")
                         .requestMatchers("/api/webhooks/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated());

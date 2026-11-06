@@ -9,6 +9,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.ResultadoCancelamento;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -41,12 +42,12 @@ class EstornoEventListenerTest {
         PoliticaCancelamento politica = PoliticaCancelamento.padrao();
 
         agendamentoComReferencia = Agendamento.criar(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
-                ServicoId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.de("30.00"), politica, agora);
+                ServicoId.novo(), ProfissionalId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.de("30.00"), politica, agora);
         agendamentoComReferencia.vincularReferenciaPagamento("pay_123");
         agendamentoRepository.salvar(agendamentoComReferencia);
 
         agendamentoSemReferencia = Agendamento.criar(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
-                ServicoId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.ZERO, politica, agora);
+                ServicoId.novo(), ProfissionalId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.ZERO, politica, agora);
         agendamentoRepository.salvar(agendamentoSemReferencia);
 
         estornosChamados = new HashMap<>();

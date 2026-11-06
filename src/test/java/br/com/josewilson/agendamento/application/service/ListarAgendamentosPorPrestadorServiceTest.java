@@ -6,6 +6,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -30,6 +31,7 @@ class ListarAgendamentosPorPrestadorServiceTest {
     private Agendamento novoAgendamento(PrestadorId prestadorId, Instant inicio) {
         Periodo periodo = new Periodo(inicio, inicio.plus(Duration.ofMinutes(30)));
         return Agendamento.criar(AgendamentoId.novo(), prestadorId, ClienteId.novo(), ServicoId.novo(),
+                ProfissionalId.novo(),
                 periodo, Dinheiro.de("100.00"), Dinheiro.ZERO, POLITICA, AGORA);
     }
 

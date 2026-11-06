@@ -15,6 +15,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.ResultadoCancelamento;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -63,6 +64,7 @@ class AgendamentoControllerTest {
         Instant agora = Instant.parse("2026-09-30T12:00:00Z");
         Periodo periodo = new Periodo(agora.plus(Duration.ofDays(2)), agora.plus(Duration.ofDays(2)).plus(Duration.ofMinutes(30)));
         return Agendamento.criar(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(), ServicoId.novo(),
+                ProfissionalId.novo(),
                 periodo, Dinheiro.de("100.00"), Dinheiro.ZERO,
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)), agora);
     }
@@ -84,6 +86,7 @@ class AgendamentoControllerTest {
                 """.formatted(agendamento.prestadorId().valor(), agendamento.clienteId().valor(), agendamento.servicoId().valor());
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(authentication(TestAutenticacao.doCliente(ClienteId.novo())))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -105,6 +108,7 @@ class AgendamentoControllerTest {
                 """.formatted(UUID_EXEMPLO, UUID_EXEMPLO);
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(authentication(TestAutenticacao.doCliente(ClienteId.novo())))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -127,6 +131,7 @@ class AgendamentoControllerTest {
                 """.formatted(UUID_EXEMPLO, UUID_EXEMPLO, UUID_EXEMPLO);
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(authentication(TestAutenticacao.doCliente(ClienteId.novo())))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -150,6 +155,7 @@ class AgendamentoControllerTest {
                 """.formatted(UUID_EXEMPLO, UUID_EXEMPLO, UUID_EXEMPLO);
 
         mockMvc.perform(post("/api/agendamentos")
+                        .with(authentication(TestAutenticacao.doCliente(ClienteId.novo())))
                         .with(csrf())
                         .contentType("application/json")
                         .content(corpo))
@@ -161,7 +167,8 @@ class AgendamentoControllerTest {
         Agendamento agendamento = agendamentoExemplo();
         given(consultarAgendamentoUseCase.executar(any())).willReturn(agendamento);
 
-        mockMvc.perform(get("/api/agendamentos/" + agendamento.id().valor()))
+        mockMvc.perform(get("/api/agendamentos/" + agendamento.id().valor())
+                        .with(authentication(TestAutenticacao.doCliente(agendamento.clienteId()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(agendamento.id().valor().toString()));
     }
@@ -171,23 +178,31 @@ class AgendamentoControllerTest {
         given(consultarAgendamentoUseCase.executar(any()))
                 .willThrow(new RecursoNaoEncontradoException("nao encontrado"));
 
-        mockMvc.perform(get("/api/agendamentos/" + UUID_EXEMPLO))
+        mockMvc.perform(get("/api/agendamentos/" + UUID_EXEMPLO)
+                        .with(authentication(TestAutenticacao.doCliente(ClienteId.novo()))))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void deveCancelarAgendamentoERetornar200() throws Exception {
+        Agendamento agendamento = agendamentoExemplo();
+        given(consultarAgendamentoUseCase.executar(any())).willReturn(agendamento);
         given(cancelarAgendamentoUseCase.executar(any()))
                 .willReturn(new ResultadoCancelamento(Dinheiro.ZERO, Dinheiro.de("30.00")));
 
-        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/cancelar").with(csrf()))
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/cancelar").with(csrf())
+                        .with(authentication(TestAutenticacao.doCliente(agendamento.clienteId()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valorReembolsado").value(30.00));
     }
 
     @Test
     void deveMarcarNoShowERetornar204() throws Exception {
-        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show").with(csrf()))
+        Agendamento agendamento = agendamentoExemplo();
+        given(consultarAgendamentoUseCase.executar(any())).willReturn(agendamento);
+
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show").with(csrf())
+                        .with(authentication(TestAutenticacao.doPrestador(agendamento.prestadorId()))))
                 .andExpect(status().isNoContent());
     }
 
@@ -216,6 +231,41 @@ class AgendamentoControllerTest {
                 .andExpect(jsonPath("$[0].clienteId").doesNotExist())
                 .andExpect(jsonPath("$[0].servicoId").doesNotExist())
                 .andExpect(jsonPath("$[0].valorServico").doesNotExist());
+    }
+
+    @Test
+    void deveRetornar403QuandoOutroClienteConsultaOuCancela() throws Exception {
+        Agendamento agendamento = agendamentoExemplo();
+        given(consultarAgendamentoUseCase.executar(any())).willReturn(agendamento);
+        var outroCliente = authentication(TestAutenticacao.doCliente(ClienteId.novo()));
+
+        mockMvc.perform(get("/api/agendamentos/" + UUID_EXEMPLO).with(outroCliente))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/cancelar").with(csrf()).with(outroCliente))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveRetornar403QuandoPrestadorDeOutraAgendaMarcaNoShowOuClienteTentaMarcar() throws Exception {
+        Agendamento agendamento = agendamentoExemplo();
+        given(consultarAgendamentoUseCase.executar(any())).willReturn(agendamento);
+
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show").with(csrf())
+                        .with(authentication(TestAutenticacao.doPrestador(PrestadorId.novo()))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/agendamentos/" + UUID_EXEMPLO + "/no-show").with(csrf())
+                        .with(authentication(TestAutenticacao.doCliente(agendamento.clienteId()))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveExigirLoginDeClienteParaCriarOuConsultar() throws Exception {
+        mockMvc.perform(get("/api/agendamentos/" + UUID_EXEMPLO)).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/agendamentos").with(csrf()).contentType("application/json").content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/agendamentos").with(csrf()).contentType("application/json").content("{}")
+                        .with(authentication(TestAutenticacao.doPrestador(PrestadorId.novo()))))
+                .andExpect(status().isForbidden());
     }
 
     @Test

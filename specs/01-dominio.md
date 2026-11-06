@@ -10,6 +10,8 @@ Todo o conteúdo deste documento está implementado em `src/main/java/br/com/jos
 | `Cliente` | Dados de contato + documento + contador de no-shows. Decide se exige sinal obrigatório (`exigeSinalObrigatorio()`). `atualizarDadosCadastrais(nome, contato)` edita nome/contato mantendo documento e histórico de no-show intactos (documento é imutável — ver `03-api-rest.md`, `PUT /api/clientes/{id}`). Não tem login — ver `02-casos-de-uso.md`, seção "Autenticação do Prestador". |
 | `Prestador` | Dados de contato + documento + política de cancelamento padrão aplicada aos seus agendamentos + credenciais de login (`email` único, `senhaHash` — nunca a senha em texto puro, ver `02-casos-de-uso.md`). `atualizarPerfil(nome, telefone)` edita só esses dois campos; documento/email/senha são imutáveis por essa via (trocar identidade de login ou documento fiscal exigiria um fluxo próprio, fora de escopo). |
 | `Servico` | Nome, duração, preço e percentual de sinal exigido pelo próprio serviço. `atualizarDados(...)` edita todos os quatro campos — agendamentos já criados guardam sua própria cópia de `valorServico`/política no momento da criação, então editar um serviço nunca muda retroativamente um agendamento passado. |
+| `Profissional` | Quem atende dentro de um estabelecimento (o `Prestador`): `id`, `estabelecimentoId` (`PrestadorId`), `nome` (`renomear(...)`). Cada profissional tem **agenda própria** — a não-sobreposição de agendamentos ativos é por profissional, não por prestador. Todo `Prestador` nasce com um profissional padrão (mesmo nome). |
+| `BloqueioDeAgenda` | Horário em que um profissional não atende (folga, almoço): `id`, `profissionalId`, `Periodo`, `motivo` opcional. Ocupa a agenda sem cliente por trás; `VerificadorDeConflito` o considera junto com os agendamentos ativos. |
 
 ## Value Objects (imutáveis, `record`, validação no construtor compacto)
 
@@ -51,3 +53,7 @@ Qualquer transição fora dessa tabela lança `TransicaoDeStatusInvalidaExceptio
 ## Invariante de não-sobreposição no banco (05/11/2026)
 
 A regra "um prestador não tem dois agendamentos ativos (`PENDENTE_PAGAMENTO`/`CONFIRMADO`) sobrepostos" é verificada por `VerificadorDeConflito` (domínio, rápida) e **garantida** pela constraint de exclusão `agendamento_sem_sobreposicao` (migration V8, Postgres `btree_gist`) contra requisições concorrentes. Intervalos são semiabertos `[inicio, fim)`: um terminando quando o outro começa não conflita.
+
+## Profissional e bloqueio de agenda (05/11/2026)
+
+O `Prestador` continua sendo o **estabelecimento** (conta com login, documento, política de cancelamento, serviços); renomeá-lo para `Estabelecimento` mudaria dezenas de arquivos sem ganho, então ficou registrado aqui como decisão. `Agendamento` ganhou `profissionalId` (obrigatório em `criar`/`reconstituir`). Serviços continuam do estabelecimento — qualquer profissional pode executar qualquer serviço (sem tabela profissional×serviço, só se um dia precisar). O banco garante a não-sobreposição por `profissional_id` (migration `V13`, recria a constraint de exclusão da `V8`) e entre bloqueios do mesmo profissional; **bloqueio × agendamento é checado só na aplicação** (não há constraint entre as duas tabelas), logo duas requisições simultâneas — um bloqueio e um agendamento no mesmo horário — poderiam passar juntas (janela aceita, ver `04-roadmap.md`).

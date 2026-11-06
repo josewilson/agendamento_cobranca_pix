@@ -4,7 +4,7 @@ Implementados em `src/main/java/br/com/josewilson/agendamento/application/`. Cad
 
 ## CriarAgendamentoUseCase
 
-**Comando:** `CriarAgendamentoCommand(prestadorId, clienteId, servicoId, periodo)`
+**Comando:** `CriarAgendamentoCommand(prestadorId, clienteId, servicoId, periodo, profissionalId)` — `profissionalId` opcional (omitido, só vale se o estabelecimento tem um único profissional; senão `IllegalArgumentException` → 400; profissional de outro estabelecimento → 400). A checagem de conflito considera os agendamentos ativos **e os bloqueios do profissional**. O `clienteId` vem da sessão do cliente logado (ver `03-api-rest.md`), nunca do corpo da requisição
 
 1. Busca `Prestador`, `Cliente`, `Servico` pelos IDs — `RecursoNaoEncontradoException` se algum não existir.
 2. Busca agendamentos ativos do prestador e chama `VerificadorDeConflito.verificarDisponibilidade` — `ConflitoDeHorarioException` se houver sobreposição.
@@ -84,7 +84,7 @@ Mesmo padrão de novo: `EstornoEventListener` (`adapter/in/evento/`) reage a `Ag
 
 ## Autenticação do Prestador (não é um caso de uso de aplicação — é infraestrutura de borda)
 
-Pedido explícito do usuário: login simples, só para `Prestador` (`Cliente` continua sem login — decisão de escopo). Por isso não há `AutenticarPrestadorUseCase` em `application/port/in`: autenticar é uma preocupação de borda (Spring Security), não uma regra de negócio da aplicação. O cadastro de prestador (`CadastrarPrestadorUseCase`) é quem ganhou a responsabilidade nova: `CadastrarPrestadorCommand` passou a carregar `email`/`senha` (texto puro), e `CadastrarPrestadorService` injeta `PasswordEncoder` (Spring Security) para gerar o hash BCrypt antes de montar o `Prestador` — o domínio nunca vê a senha em texto puro nem faz hashing, só valida que `senhaHash` não é vazio (mesmo nível de validação simples que já tinha para `nome`/`telefone`).
+Pedido explícito do usuário: login simples de `Prestador`; em 05/11/2026 entrou também o login de `Cliente` (ver abaixo, "Login de Cliente"). Por isso não há `AutenticarPrestadorUseCase` em `application/port/in`: autenticar é uma preocupação de borda (Spring Security), não uma regra de negócio da aplicação. O cadastro de prestador (`CadastrarPrestadorUseCase`) é quem ganhou a responsabilidade nova: `CadastrarPrestadorCommand` passou a carregar `email`/`senha` (texto puro), e `CadastrarPrestadorService` injeta `PasswordEncoder` (Spring Security) para gerar o hash BCrypt antes de montar o `Prestador` — o domínio nunca vê a senha em texto puro nem faz hashing, só valida que `senhaHash` não é vazio (mesmo nível de validação simples que já tinha para `nome`/`telefone`).
 
 `Prestador` ganhou `email` (`String`, único, validado com o mesmo padrão de `Contato.email`, mas duplicado como campo simples — mesmo precedente do `telefone`, ver `specs/04-roadmap.md`) e `senhaHash` (`String`, só valida não-vazio). `PrestadorRepository` ganhou `buscarPorEmail(String)`, usado por `PrestadorUserDetailsService` (`adapter/in/web/security/`, implementa `UserDetailsService` do Spring Security) para autenticar.
 
@@ -107,6 +107,15 @@ Terceiro item do levantamento de prontidão para produção (ver `specs/04-roadm
 - **`AtualizarPrestadorUseCase`** (`AtualizarPrestadorCommand(prestadorId, prestadorAutenticado, nome, telefone)`) — exige login; só edita o próprio perfil (`prestadorId` precisa bater com `prestadorAutenticado`, mesmo `AcessoNaoAutorizadoException` se não bater). Edita só `nome`/`telefone` via `Prestador.atualizarPerfil(...)` — documento, email e senha permanecem imutáveis por essa via (trocar identidade de login ou documento fiscal exigiria um fluxo próprio, fora de escopo desta edição simples). Não existe `ExcluirPrestadorUseCase`: excluir a própria conta logada envolveria invalidar a sessão corrente e decidir o que fazer com serviços/agendamentos já vinculados — adiado conscientemente, ver `specs/04-roadmap.md`.
 
 `PrestadorRepository`/`ClienteRepository`/`ServicoRepository` ganharam `excluir(id)`. Um documento ou email duplicado na exclusão/edição (ex.: tentar editar um cliente para um email que já pertence a outro) estoura `DataIntegrityViolationException` na constraint única do banco, tratada pelo `GlobalExceptionHandler` como **409** (mensagem genérica — qual coluna/valor colidiu é detalhe de implementação do banco, não algo que a API deveria vazar).
+
+## Login de Cliente e permissões (05/11/2026)
+
+Fecha o risco antes aceito de "qualquer um com o id de um agendamento consulta/cancela". `Cliente` ganhou `senhaHash` (BCrypt, gerado em `CadastrarClienteService` via `PasswordEncoder`, nunca no domínio; `null` = cliente legado sem login) e a migration `V12` (índice único de email só entre clientes com login). Login em `POST /api/auth/cliente/login` (`ClienteAuthController`, sessão por cookie como o do prestador, papel `ROLE_CLIENTE`; contador de falhas do `LoginRateLimiter` com chave `cliente:<email>`; compara com um hash falso quando o email não existe, para não revelar por tempo quais emails têm conta). Regras: criar agendamento = cliente logado; consultar/cancelar = o cliente do agendamento **ou** o prestador dono (`AutorizacaoAgendamento`); marcar no-show = só o prestador dono; listar clientes = prestador logado; editar/excluir cliente = o próprio. Clientes cadastrados antes da `V12` não têm login (cadastre de novo com outro email ou edite direto no banco).
+
+## Profissionais e bloqueios (05/11/2026)
+
+Dois casos de uso agrupados (desvio consciente do "um por operação" do resto do projeto — são CRUDs pequenos): `GerenciarProfissionaisUseCase` (`cadastrar`/`listar`/`atualizar`/`excluir`; só o estabelecimento dono altera, `403` caso contrário; recusa excluir o último profissional) e `GerenciarBloqueiosUseCase` (`bloquear`/`listar`/`remover`; só o dono; recusa período no passado e bloquear por cima de agendamento ativo). `CadastrarPrestadorService` cria o profissional padrão. Portas novas: `ProfissionalRepository`, `BloqueioRepository` (JPA `!dev`, memória `dev`); `AgendamentoRepository.buscarAtivosPorPrestador` virou `buscarAtivosPorProfissional`.
+
 
 ## Portas de saída usadas pelos casos de uso
 

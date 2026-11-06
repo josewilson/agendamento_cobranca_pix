@@ -67,12 +67,16 @@ class CriarAgendamentoRollbackIT {
     private ClienteRepository clienteRepository;
     @Autowired
     private ServicoRepository servicoRepository;
+    @Autowired
+    private br.com.josewilson.agendamento.application.port.out.ProfissionalRepository profissionalRepository;
 
     @Test
     void falhaDoGatewayDesfazOAgendamentoJaSalvo() {
         Prestador prestador = prestadorRepository.salvar(new Prestador(PrestadorId.novo(), "Clinica Rollback",
                 "11987654321", "rollback@exemplo.com", "hash-fake", DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100))));
+        profissionalRepository.salvar(new br.com.josewilson.agendamento.domain.model.profissional.Profissional(
+                br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId.novo(), prestador.id(), "Dra. Ana"));
         Cliente cliente = clienteRepository.salvar(new Cliente(ClienteId.novo(), "Maria Silva",
                 new Contato("maria@exemplo.com", "11987654321"), DocumentoFiscal.cpf("111.444.777-35")));
         Servico servico = servicoRepository.salvar(new Servico(ServicoId.novo(), prestador.id(), "Consulta",

@@ -16,10 +16,12 @@ const PRESTADORES = [
 ];
 const CLIENTES = [{ id: 'c-1', nome: 'Maria' }];
 const SERVICOS = [{ id: 's-1', nome: 'Corte' }];
+const PROFISSIONAIS = [{ id: 'pf-1', nome: 'Dra. Ana' }];
 const AGENDAMENTO = {
   id: 'ag-uuid-1',
   clienteId: 'c-1',
   servicoId: 's-1',
+  profissionalId: 'pf-1',
   inicio: '2030-01-10T13:00:00Z',
   valorServico: '80.00',
   status: 'PENDENTE_PAGAMENTO',
@@ -30,6 +32,7 @@ function mockApi({ agendamentos = [AGENDAMENTO] } = {}) {
     if (url === '/api/prestadores') return Promise.resolve(PRESTADORES);
     if (url.startsWith('/api/agendamentos')) return Promise.resolve(agendamentos);
     if (url === '/api/clientes') return Promise.resolve(CLIENTES);
+    if (url.startsWith('/api/profissionais')) return Promise.resolve(PROFISSIONAIS);
     if (url.startsWith('/api/servicos')) return Promise.resolve(SERVICOS);
     return Promise.reject(new Error(`url inesperada: ${url}`));
   });
@@ -58,6 +61,7 @@ describe('AgendaPage', () => {
 
     expect(await screen.findByText('Maria')).toBeInTheDocument();
     expect(screen.getByText('Corte')).toBeInTheDocument();
+    expect(screen.getByText('Dra. Ana')).toBeInTheDocument();
     expect(screen.getByText('R$ 80.00')).toBeInTheDocument();
     expect(screen.getByText('PENDENTE_PAGAMENTO', { selector: '.status-badge' })).toBeInTheDocument();
     expect(api.get).toHaveBeenCalledWith('/api/agendamentos?prestadorId=p-1');

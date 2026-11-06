@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface AgendamentoJpaRepository extends JpaRepository<AgendamentoJpaEntity, UUID> {
 
-    List<AgendamentoJpaEntity> findByPrestadorIdAndStatusIn(UUID prestadorId, List<String> status);
+    List<AgendamentoJpaEntity> findByProfissionalIdAndStatusIn(UUID profissionalId, List<String> status);
 
     List<AgendamentoJpaEntity> findByStatus(String status);
 

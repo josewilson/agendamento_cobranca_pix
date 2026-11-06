@@ -6,6 +6,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
@@ -37,9 +38,9 @@ public class InMemoryAgendamentoRepository implements AgendamentoRepository {
     }
 
     @Override
-    public List<Agendamento> buscarAtivosPorPrestador(PrestadorId prestadorId) {
+    public List<Agendamento> buscarAtivosPorProfissional(ProfissionalId profissionalId) {
         return agendamentos.values().stream()
-                .filter(agendamento -> agendamento.prestadorId().equals(prestadorId))
+                .filter(agendamento -> agendamento.profissionalId().equals(profissionalId))
                 .filter(agendamento -> STATUS_ATIVOS.contains(agendamento.status()))
                 .toList();
     }

@@ -6,6 +6,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -22,6 +23,7 @@ public final class AgendamentoMapper {
         AgendamentoJpaEntity entity = new AgendamentoJpaEntity();
         entity.setId(agendamento.id().valor());
         entity.setPrestadorId(agendamento.prestadorId().valor());
+        entity.setProfissionalId(agendamento.profissionalId().valor());
         entity.setClienteId(agendamento.clienteId().valor());
         entity.setServicoId(agendamento.servicoId().valor());
         entity.setPeriodoInicio(agendamento.periodo().inicio());
@@ -46,6 +48,7 @@ public final class AgendamentoMapper {
                 new PrestadorId(entity.getPrestadorId()),
                 new ClienteId(entity.getClienteId()),
                 new ServicoId(entity.getServicoId()),
+                new ProfissionalId(entity.getProfissionalId()),
                 periodo,
                 Dinheiro.de(entity.getValorServico()),
                 Dinheiro.de(entity.getValorSinal()),

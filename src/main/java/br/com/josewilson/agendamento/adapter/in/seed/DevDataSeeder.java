@@ -2,11 +2,14 @@ package br.com.josewilson.agendamento.adapter.in.seed;
 
 import br.com.josewilson.agendamento.application.port.out.ClienteRepository;
 import br.com.josewilson.agendamento.application.port.out.PrestadorRepository;
+import br.com.josewilson.agendamento.application.port.out.ProfissionalRepository;
 import br.com.josewilson.agendamento.application.port.out.ServicoRepository;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.Profissional;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.Servico;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
@@ -42,13 +45,16 @@ public class DevDataSeeder implements CommandLineRunner {
     public static final PrestadorId PRESTADOR_ID = PrestadorId.de("00000000-0000-0000-0000-000000000001");
     public static final ClienteId CLIENTE_ID = ClienteId.de("00000000-0000-0000-0000-000000000002");
     public static final ServicoId SERVICO_ID = ServicoId.de("00000000-0000-0000-0000-000000000003");
+    public static final ProfissionalId PROFISSIONAL_ID = ProfissionalId.de("00000000-0000-0000-0000-000000000004");
 
     private final PrestadorRepository prestadorRepository;
     private final ClienteRepository clienteRepository;
     private final ServicoRepository servicoRepository;
+    private final ProfissionalRepository profissionalRepository;
 
     public DevDataSeeder(PrestadorRepository prestadorRepository, ClienteRepository clienteRepository,
-                          ServicoRepository servicoRepository) {
+                          ServicoRepository servicoRepository, ProfissionalRepository profissionalRepository) {
+        this.profissionalRepository = profissionalRepository;
         this.prestadorRepository = prestadorRepository;
         this.clienteRepository = clienteRepository;
         this.servicoRepository = servicoRepository;
@@ -59,6 +65,8 @@ public class DevDataSeeder implements CommandLineRunner {
         prestadorRepository.salvar(new Prestador(PRESTADOR_ID, "Clinica Bem-Estar", "11987654321",
                 "clinica@exemplo.com", SENHA_HASH_PLACEHOLDER,
                 DocumentoFiscal.cnpj("11444777000161"), PoliticaCancelamento.padrao()));
+
+        profissionalRepository.salvar(new Profissional(PROFISSIONAL_ID, PRESTADOR_ID, "Clinica Bem-Estar"));
 
         clienteRepository.salvar(new Cliente(CLIENTE_ID, "Maria Silva",
                 new Contato("maria.silva@example.com", "11987654321"), DocumentoFiscal.cpf("52998224725")));

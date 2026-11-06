@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 export default function NovoAgendamentoPage() {
   const navigate = useNavigate();
+  const { cliente } = useAuth();
   const [prestadores, setPrestadores] = useState([]);
   const [servicos, setServicos] = useState([]);
-  const [clientes, setClientes] = useState([]);
+  const [profissionais, setProfissionais] = useState([]);
   const [prestadorId, setPrestadorId] = useState('');
   const [servicoId, setServicoId] = useState('');
-  const [clienteId, setClienteId] = useState('');
+  const [profissionalId, setProfissionalId] = useState('');
   const [inicio, setInicio] = useState('');
   const [resultado, setResultado] = useState(null);
   const [erro, setErro] = useState(null);
@@ -17,17 +19,25 @@ export default function NovoAgendamentoPage() {
 
   useEffect(() => {
     api.get('/api/prestadores').then(setPrestadores).catch((e) => setErro(e.message));
-    api.get('/api/clientes').then(setClientes).catch((e) => setErro(e.message));
   }, []);
 
   useEffect(() => {
     if (!prestadorId) {
       setServicos([]);
+      setProfissionais([]);
       return;
     }
     api
       .get(`/api/servicos?prestadorId=${prestadorId}`)
       .then(setServicos)
+      .catch((e) => setErro(e.message));
+    api
+      .get(`/api/profissionais?prestadorId=${prestadorId}`)
+      .then((lista) => {
+        setProfissionais(lista);
+        // um unico profissional: ja vem escolhido
+        setProfissionalId(lista.length === 1 ? lista[0].id : '');
+      })
       .catch((e) => setErro(e.message));
   }, [prestadorId]);
 
@@ -44,8 +54,8 @@ export default function NovoAgendamentoPage() {
 
       const resposta = await api.post('/api/agendamentos', {
         prestadorId,
-        clienteId,
         servicoId,
+        profissionalId,
         inicio: inicioIso,
         fim: fimIso,
       });
@@ -60,6 +70,7 @@ export default function NovoAgendamentoPage() {
   return (
     <div>
       <h1>Novo agendamento</h1>
+      {cliente && <p>Agendando como <strong>{cliente.nome}</strong>.</p>}
 
       <form onSubmit={handleSubmit} className="form">
         <label>
@@ -69,6 +80,7 @@ export default function NovoAgendamentoPage() {
             onChange={(e) => {
               setPrestadorId(e.target.value);
               setServicoId('');
+              setProfissionalId('');
             }}
             required
           >
@@ -94,12 +106,17 @@ export default function NovoAgendamentoPage() {
         </label>
 
         <label>
-          Cliente
-          <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
+          Profissional
+          <select
+            value={profissionalId}
+            onChange={(e) => setProfissionalId(e.target.value)}
+            required
+            disabled={!prestadorId}
+          >
             <option value="">Selecione...</option>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
+            {profissionais.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
               </option>
             ))}
           </select>
@@ -110,7 +127,7 @@ export default function NovoAgendamentoPage() {
           <input type="datetime-local" value={inicio} onChange={(e) => setInicio(e.target.value)} required />
         </label>
 
-        <button type="submit" disabled={carregando || !servicoSelecionado}>
+        <button type="submit" disabled={carregando || !servicoSelecionado || !profissionalId}>
           Agendar
         </button>
       </form>

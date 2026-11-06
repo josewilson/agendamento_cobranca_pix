@@ -11,6 +11,8 @@ import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
+import br.com.josewilson.agendamento.domain.model.profissional.Profissional;
 import br.com.josewilson.agendamento.domain.model.servico.Servico;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
@@ -44,10 +46,13 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
     private ClienteRepository clienteRepository;
     @Autowired
     private ServicoRepository servicoRepository;
+    @Autowired
+    private br.com.josewilson.agendamento.application.port.out.ProfissionalRepository profissionalRepository;
 
     private Prestador prestador;
     private Cliente cliente;
     private Servico servico;
+    private Profissional profissional;
 
     @BeforeEach
     void setUp() {
@@ -57,12 +62,14 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
         cliente = clienteRepository.salvar(new Cliente(ClienteId.novo(), "Maria Silva",
                 new Contato("maria@exemplo.com", "11987654321"),
                 DocumentoFiscal.cpf("111.444.777-35")));
+        profissional = profissionalRepository.salvar(new Profissional(ProfissionalId.novo(), prestador.id(), "Dra. Ana"));
         servico = servicoRepository.salvar(new Servico(ServicoId.novo(), prestador.id(), "Consulta",
                 Duration.ofMinutes(30), Dinheiro.de("100.00"), BigDecimal.valueOf(30)));
     }
 
     private Agendamento novoAgendamento(Instant agora, Periodo periodo, Dinheiro valorSinal) {
         return Agendamento.criar(AgendamentoId.novo(), prestador.id(), cliente.id(), servico.id(),
+                profissional.id(),
                 periodo, servico.preco(), valorSinal, prestador.politicaCancelamentoPadrao(), agora);
     }
 
@@ -85,7 +92,7 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
     }
 
     @Test
-    void deveBuscarAtivosPorPrestador() {
+    void deveBuscarAtivosPorProfissional() {
         Instant agora = Instant.now();
         Periodo periodo1 = new Periodo(agora.plus(Duration.ofDays(1)), agora.plus(Duration.ofDays(1)).plus(Duration.ofMinutes(30)));
         Periodo periodo2 = new Periodo(agora.plus(Duration.ofDays(2)), agora.plus(Duration.ofDays(2)).plus(Duration.ofMinutes(30)));
@@ -94,13 +101,13 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
         agendamentoRepository.salvar(pendente);
         agendamentoRepository.salvar(confirmado);
 
-        List<Agendamento> ativos = agendamentoRepository.buscarAtivosPorPrestador(prestador.id());
+        List<Agendamento> ativos = agendamentoRepository.buscarAtivosPorProfissional(profissional.id());
 
         assertThat(ativos).extracting(Agendamento::id).containsExactlyInAnyOrder(pendente.id(), confirmado.id());
     }
 
     @Test
-    void bancoDeveRecusarAgendamentoAtivoSobrepostoDoMesmoPrestador() {
+    void bancoDeveRecusarAgendamentoAtivoSobrepostoDoMesmoProfissional() {
         Instant agora = Instant.now();
         Instant inicio = agora.plus(Duration.ofDays(1));
         agendamentoRepository.salvar(novoAgendamento(agora, new Periodo(inicio, inicio.plus(Duration.ofMinutes(30))), Dinheiro.ZERO));
@@ -123,18 +130,18 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
         cancelado.cancelar(agora);
         agendamentoRepository.salvar(cancelado);
 
-        assertThat(agendamentoRepository.buscarAtivosPorPrestador(prestador.id())).hasSize(2);
+        assertThat(agendamentoRepository.buscarAtivosPorProfissional(profissional.id())).hasSize(2);
     }
 
     @Test
-    void naoDeveIncluirAgendamentoCanceladoEmAtivosPorPrestador() {
+    void naoDeveIncluirAgendamentoCanceladoEmAtivosPorProfissional() {
         Instant agora = Instant.now();
         Periodo periodo = new Periodo(agora.plus(Duration.ofDays(1)), agora.plus(Duration.ofDays(1)).plus(Duration.ofMinutes(30)));
         Agendamento agendamento = novoAgendamento(agora, periodo, Dinheiro.ZERO);
         agendamento.cancelar(agora);
         agendamentoRepository.salvar(agendamento);
 
-        assertThat(agendamentoRepository.buscarAtivosPorPrestador(prestador.id())).isEmpty();
+        assertThat(agendamentoRepository.buscarAtivosPorProfissional(profissional.id())).isEmpty();
     }
 
     @Test
@@ -163,5 +170,20 @@ class AgendamentoRepositoryAdapterIT extends AbstractPersistenceIT {
         List<Agendamento> doPrestador = agendamentoRepository.buscarPorPrestador(prestador.id());
 
         assertThat(doPrestador).extracting(Agendamento::id).containsExactly(maisCedo.id(), maisTarde.id());
+    }
+    @Test
+    void doisProfissionaisDoMesmoPrestadorPodemTerAgendamentoNoMesmoHorario() {
+        Profissional outro = profissionalRepository.salvar(new Profissional(ProfissionalId.novo(), prestador.id(), "Dr. Beto"));
+        Instant agora = Instant.now();
+        Instant inicio = agora.plus(Duration.ofDays(1));
+        Periodo periodo = new Periodo(inicio, inicio.plus(Duration.ofMinutes(30)));
+        agendamentoRepository.salvar(novoAgendamento(agora, periodo, Dinheiro.ZERO));
+
+        Agendamento doOutro = Agendamento.criar(AgendamentoId.novo(), prestador.id(), cliente.id(), servico.id(),
+                outro.id(), periodo, servico.preco(), Dinheiro.ZERO, prestador.politicaCancelamentoPadrao(), agora);
+        agendamentoRepository.salvar(doOutro);
+
+        assertThat(agendamentoRepository.buscarAtivosPorProfissional(outro.id())).hasSize(1);
+        assertThat(agendamentoRepository.buscarAtivosPorProfissional(profissional.id())).hasSize(1);
     }
 }

@@ -5,6 +5,8 @@ import br.com.josewilson.agendamento.application.port.in.CriarAgendamentoCommand
 import br.com.josewilson.agendamento.application.port.in.CriarAgendamentoUseCase;
 import br.com.josewilson.agendamento.application.port.in.ResultadoCriacaoAgendamento;
 import br.com.josewilson.agendamento.application.port.out.AgendamentoRepository;
+import br.com.josewilson.agendamento.application.port.out.BloqueioRepository;
+import br.com.josewilson.agendamento.application.port.out.ProfissionalRepository;
 import br.com.josewilson.agendamento.application.port.out.Clock;
 import br.com.josewilson.agendamento.application.port.out.ClienteRepository;
 import br.com.josewilson.agendamento.application.port.out.CobrancaPix;
@@ -17,6 +19,8 @@ import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
+import br.com.josewilson.agendamento.domain.model.profissional.BloqueioDeAgenda;
+import br.com.josewilson.agendamento.domain.model.profissional.Profissional;
 import br.com.josewilson.agendamento.domain.model.servico.Servico;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.service.VerificadorDeConflito;
@@ -37,18 +41,23 @@ public class CriarAgendamentoService implements CriarAgendamentoUseCase {
     private final AgendamentoRepository agendamentoRepository;
     private final ClienteRepository clienteRepository;
     private final PrestadorRepository prestadorRepository;
+    private final ProfissionalRepository profissionalRepository;
+    private final BloqueioRepository bloqueioRepository;
     private final ServicoRepository servicoRepository;
     private final GatewayDePagamento gatewayDePagamento;
     private final PublicadorDeEventos publicadorDeEventos;
     private final Clock clock;
 
     public CriarAgendamentoService(AgendamentoRepository agendamentoRepository, ClienteRepository clienteRepository,
-                                    PrestadorRepository prestadorRepository, ServicoRepository servicoRepository,
+                                    PrestadorRepository prestadorRepository, ProfissionalRepository profissionalRepository,
+                                    BloqueioRepository bloqueioRepository, ServicoRepository servicoRepository,
                                     GatewayDePagamento gatewayDePagamento, PublicadorDeEventos publicadorDeEventos,
                                     Clock clock) {
         this.agendamentoRepository = agendamentoRepository;
         this.clienteRepository = clienteRepository;
         this.prestadorRepository = prestadorRepository;
+        this.profissionalRepository = profissionalRepository;
+        this.bloqueioRepository = bloqueioRepository;
         this.servicoRepository = servicoRepository;
         this.gatewayDePagamento = gatewayDePagamento;
         this.publicadorDeEventos = publicadorDeEventos;
@@ -64,15 +73,17 @@ public class CriarAgendamentoService implements CriarAgendamentoUseCase {
         Servico servico = servicoRepository.buscarPorId(command.servicoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Servico nao encontrado: " + command.servicoId()));
 
-        List<Agendamento> agendamentosAtivos = agendamentoRepository.buscarAtivosPorPrestador(command.prestadorId());
-        VerificadorDeConflito.verificarDisponibilidade(command.periodo(), agendamentosAtivos);
+        Profissional profissional = resolverProfissional(command, prestador);
+        List<Agendamento> agendamentosAtivos = agendamentoRepository.buscarAtivosPorProfissional(profissional.id());
+        List<BloqueioDeAgenda> bloqueios = bloqueioRepository.buscarPorProfissional(profissional.id());
+        VerificadorDeConflito.verificarDisponibilidade(command.periodo(), agendamentosAtivos, bloqueios);
 
         Dinheiro valorSinal = calcularValorSinal(servico, cliente);
         boolean exigeSinal = valorSinal.maiorQue(Dinheiro.ZERO);
 
         Instant agora = clock.agora();
         Agendamento agendamento = Agendamento.criar(AgendamentoId.novo(), prestador.id(), cliente.id(), servico.id(),
-                command.periodo(), servico.preco(), valorSinal, prestador.politicaCancelamentoPadrao(), agora);
+                profissional.id(), command.periodo(), servico.preco(), valorSinal, prestador.politicaCancelamentoPadrao(), agora);
 
         // Persiste (e faz flush) ANTES de cobrar: a constraint de exclusao do banco recusa o horario
         // concorrente aqui, sem ter gerado cobranca no gateway. Se o gateway falhar depois, a
@@ -93,7 +104,25 @@ public class CriarAgendamentoService implements CriarAgendamentoUseCase {
         return new ResultadoCriacaoAgendamento(agendamento, cobranca);
     }
 
-    private Dinheiro calcularValorSinal(Servico servico, Cliente cliente) {
+    private Profissional resolverProfissional(CriarAgendamentoCommand command, Prestador prestador) {
+        if (command.profissionalId() != null) {
+            Profissional profissional = profissionalRepository.buscarPorId(command.profissionalId())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException(
+                            "Profissional nao encontrado: " + command.profissionalId()));
+            if (!profissional.estabelecimentoId().equals(prestador.id())) {
+                throw new IllegalArgumentException("Profissional nao pertence ao prestador informado");
+            }
+            return profissional;
+        }
+        List<Profissional> profissionais = profissionalRepository.buscarPorEstabelecimento(prestador.id());
+        if (profissionais.size() != 1) {
+            throw new IllegalArgumentException("Informe o profissional: o prestador tem " + profissionais.size());
+        }
+        return profissionais.get(0);
+    }
+
+    private Dinheiro calcularValorSinal(
+Servico servico, Cliente cliente) {
         if (servico.exigeSinal()) {
             return servico.calcularSinal();
         }

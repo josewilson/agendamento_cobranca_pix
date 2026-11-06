@@ -4,6 +4,12 @@ import br.com.josewilson.agendamento.adapter.out.evento.PublicadorDeEventosEmMem
 import br.com.josewilson.agendamento.adapter.out.pagamento.memory.GatewayDePagamentoFake;
 import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryAgendamentoRepository;
 import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryClienteRepository;
+import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryBloqueioRepository;
+import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryProfissionalRepository;
+import br.com.josewilson.agendamento.domain.model.profissional.BloqueioDeAgenda;
+import br.com.josewilson.agendamento.domain.model.profissional.BloqueioId;
+import br.com.josewilson.agendamento.domain.model.profissional.Profissional;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryPrestadorRepository;
 import br.com.josewilson.agendamento.adapter.out.persistence.memory.InMemoryServicoRepository;
 import br.com.josewilson.agendamento.application.exception.RecursoNaoEncontradoException;
@@ -43,6 +49,9 @@ class CriarAgendamentoServiceTest {
     private CriarAgendamentoService service;
 
     private Prestador prestador;
+    private Profissional profissional;
+    private InMemoryProfissionalRepository profissionalRepository;
+    private InMemoryBloqueioRepository bloqueioRepository;
     private Cliente cliente;
     private Servico servicoComSinal;
     private Servico servicoSemSinal;
@@ -53,16 +62,19 @@ class CriarAgendamentoServiceTest {
         clienteRepository = new InMemoryClienteRepository();
         InMemoryPrestadorRepository prestadorRepository = new InMemoryPrestadorRepository();
         InMemoryServicoRepository servicoRepository = new InMemoryServicoRepository();
+        profissionalRepository = new InMemoryProfissionalRepository();
+        bloqueioRepository = new InMemoryBloqueioRepository();
         GatewayDePagamentoFake gatewayDePagamento = new GatewayDePagamentoFake();
         publicadorDeEventos = new PublicadorDeEventosEmMemoria();
         ClockFixo clock = new ClockFixo(AGORA);
         service = new CriarAgendamentoService(agendamentoRepository, clienteRepository, prestadorRepository,
-                servicoRepository, gatewayDePagamento, publicadorDeEventos, clock);
+                profissionalRepository, bloqueioRepository, servicoRepository, gatewayDePagamento, publicadorDeEventos, clock);
 
         prestador = new Prestador(PrestadorId.novo(), "Clinica Bem Estar", "11987654321",
                 "clinica@exemplo.com", "hash-fake-de-teste", DocumentoFiscal.cnpj("11.222.333/0001-81"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)));
         prestadorRepository.salvar(prestador);
+        profissional = profissionalRepository.salvar(new Profissional(ProfissionalId.novo(), prestador.id(), "Dra. Ana"));
 
         cliente = new Cliente(ClienteId.novo(), "Maria Silva",
                 new Contato("maria@exemplo.com", "11987654321"),
@@ -169,5 +181,63 @@ class CriarAgendamentoServiceTest {
                 .hasSize(1)
                 .first()
                 .isInstanceOf(AgendamentoCriado.class);
+    }
+    private CriarAgendamentoCommand comando(ProfissionalId profissionalId, Periodo periodo) {
+        return new CriarAgendamentoCommand(prestador.id(), cliente.id(), servicoSemSinal.id(), periodo, profissionalId);
+    }
+
+    private Periodo amanha(int horaUtc) {
+        Instant inicio = AGORA.plus(Duration.ofDays(1)).truncatedTo(java.time.temporal.ChronoUnit.DAYS).plus(Duration.ofHours(horaUtc));
+        return new Periodo(inicio, inicio.plus(Duration.ofMinutes(30)));
+    }
+
+    @Test
+    void usaOUnicoProfissionalQuandoNaoInformado() {
+        var resultado = service.executar(comando(null, amanha(10)));
+
+        assertThat(resultado.agendamento().profissionalId()).isEqualTo(profissional.id());
+    }
+
+    @Test
+    void exigeInformarProfissionalQuandoHaMaisDeUm() {
+        profissionalRepository.salvar(new Profissional(ProfissionalId.novo(), prestador.id(), "Dr. Beto"));
+
+        assertThatThrownBy(() -> service.executar(comando(null, amanha(10))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Informe o profissional");
+    }
+
+    @Test
+    void profissionaisDiferentesPodemAtenderNoMesmoHorario() {
+        Profissional outro = profissionalRepository.salvar(new Profissional(ProfissionalId.novo(), prestador.id(), "Dr. Beto"));
+
+        service.executar(comando(profissional.id(), amanha(10)));
+        var resultado = service.executar(comando(outro.id(), amanha(10)));
+
+        assertThat(resultado.agendamento().profissionalId()).isEqualTo(outro.id());
+    }
+
+    @Test
+    void mesmoProfissionalNoMesmoHorarioConflita() {
+        service.executar(comando(profissional.id(), amanha(10)));
+
+        assertThatThrownBy(() -> service.executar(comando(profissional.id(), amanha(10))))
+                .isInstanceOf(br.com.josewilson.agendamento.domain.exception.ConflitoDeHorarioException.class);
+    }
+
+    @Test
+    void horarioBloqueadoDoProfissionalConflita() {
+        bloqueioRepository.salvar(new BloqueioDeAgenda(BloqueioId.novo(), profissional.id(), amanha(12), "Almoco"));
+
+        assertThatThrownBy(() -> service.executar(comando(profissional.id(), amanha(12))))
+                .isInstanceOf(br.com.josewilson.agendamento.domain.exception.ConflitoDeHorarioException.class)
+                .hasMessageContaining("bloqueado");
+    }
+
+    @Test
+    void recusaProfissionalDeOutroPrestador() {
+        Profissional alheio = profissionalRepository.salvar(new Profissional(ProfissionalId.novo(), PrestadorId.novo(), "Alheio"));
+
+        assertThatThrownBy(() -> service.executar(comando(alheio.id(), amanha(10))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("nao pertence");
     }
 }

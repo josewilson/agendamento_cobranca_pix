@@ -6,7 +6,7 @@ Documentação interativa via `springdoc-openapi-starter-webmvc-ui` em `/swagger
 
 **CORS**: liberado para `app.cors.allowed-origins` (`SecurityConfig`, `adapter/in/web/security/` — único lugar que configura CORS desde que `WebConfig` foi removido nesta sessão, ver `specs/04-roadmap.md`), por padrão só `http://localhost:5173` (o frontend separado em `frontend/`, ver `CLAUDE.md`), com `allowCredentials(true)` — necessário para o cookie de sessão do login (ver abaixo) ser enviado nas chamadas entre origens diferentes. Sem isso o browser bloqueia as chamadas antes de chegarem aos controllers.
 
-**Autenticação**: login simples de `Prestador` via sessão (cookie `JSESSIONID`), ver seção `/api/auth/*` abaixo. `Cliente` continua sem login (decisão de escopo, risco aceito conscientemente — ver `specs/02-casos-de-uso.md`). A maior parte da API é pública (fluxo de reserva: listar prestador/serviço, cadastrar cliente, criar/consultar/cancelar/marcar no-show um agendamento, webhooks); `POST`/`PUT`/`DELETE /api/servicos` e `PUT /api/prestadores/{id}` exigem estar autenticado como o `Prestador` dono dos dados (endpoints sem login nessas rotas retornam **401**). `GET /api/agendamentos` é uma exceção parcial: exige login, mas de **qualquer** prestador, não necessariamente o dono da agenda pedida (`prestadorId` opcional na query string — pedido do usuário em 02/10/2026, risco aceito conscientemente, ver `specs/04-roadmap.md`).
+**Autenticação**: sessão por cookie (`JSESSIONID`) para dois papéis — `Prestador` (`POST /api/auth/login`, `ROLE_PRESTADOR`) e `Cliente` (`POST /api/auth/cliente/login`, `ROLE_CLIENTE`), ver `/api/auth/*` abaixo. Público: listar prestadores/serviços/profissionais, cadastrar prestador e cliente, webhooks. Cliente logado: criar agendamento, editar/excluir o próprio cadastro. Prestador logado: gestão (agenda, serviços, profissionais, bloqueios, lista de clientes, no-show). Consultar/cancelar agendamento: o cliente do agendamento ou o prestador dono. Papel errado = `403`; sem login = `401`.
 
 **CSRF**: habilitado via `CookieCsrfTokenRepository` (cookie `XSRF-TOKEN`, não `HttpOnly` — precisa ser legível por JS), exceto para `/api/webhooks/**`. Qualquer chamada que não seja `GET` precisa do header `X-XSRF-TOKEN` com o valor desse cookie — o frontend já faz isso automaticamente (`frontend/src/api/client.js`). Sem o header (ou com um valor que não bate com o cookie), a chamada é rejeitada antes de chegar ao controller.
 
@@ -60,7 +60,7 @@ Consulta quem está logado na sessão atual (usado pelo frontend para saber se d
 
 Cadastra um cliente. Executa `CadastrarClienteUseCase`.
 
-**Request** (`CadastrarClienteRequest`; todos `@NotBlank` exceto `canalPreferido`, opcional — `AMBOS` (padrão), `EMAIL` ou `WHATSAPP`: por quais canais o cliente recebe avisos; também aceito em `PUT /api/clientes/{id}`, e `ClienteResponse` o devolve):
+**Request** (`CadastrarClienteRequest`; todos `@NotBlank` (inclusive `senha`: mínimo 8 caracteres com letra e número, gera o login do cliente) exceto `canalPreferido`, opcional — `AMBOS` (padrão), `EMAIL` ou `WHATSAPP`: por quais canais o cliente recebe avisos; também aceito em `PUT /api/clientes/{id}`, e `ClienteResponse` o devolve):
 ```json
 { "nome": "Maria Silva", "email": "maria@exemplo.com", "telefone": "11987654321", "documentoNumero": "52998224725", "documentoTipo": "CPF" }
 ```
@@ -74,11 +74,11 @@ Cadastra um cliente. Executa `CadastrarClienteUseCase`.
 
 ## `GET /api/clientes`
 
-Lista todos os clientes cadastrados. Executa `ListarClientesUseCase`. **200 OK**, array de `ClienteResponse`. Existe especificamente para o frontend poder oferecer um `<select>` de clientes por nome na tela de novo agendamento — a regra do projeto é que nenhum id de cadastro aparece como texto na UI (ver `CLAUDE.md`), então pedir pro usuário colar um UUID não é uma opção.
+Lista todos os clientes cadastrados. Executa `ListarClientesUseCase`. **Exige login de Prestador** (são dados pessoais de todos os clientes; `401`/`403` caso contrário). **200 OK**, array de `ClienteResponse`. Existe especificamente para o frontend poder oferecer um `<select>` de clientes por nome na tela de novo agendamento — a regra do projeto é que nenhum id de cadastro aparece como texto na UI (ver `CLAUDE.md`), então pedir pro usuário colar um UUID não é uma opção.
 
 ## `PUT /api/clientes/{id}`
 
-Edita nome/email/telefone de um cliente. Executa `AtualizarClienteUseCase`. Público (mesmo escopo de sempre do `Cliente`).
+Edita nome/email/telefone de um cliente. Executa `AtualizarClienteUseCase`. **Exige login de Cliente e só do próprio cadastro** (`403` se o `{id}` não for o da sessão).
 
 **Request** (`AtualizarClienteRequest`, todos `@NotBlank`): `{ "nome": "Maria S. Silva", "email": "maria.nova@exemplo.com", "telefone": "11999998888" }`
 
@@ -86,7 +86,7 @@ Edita nome/email/telefone de um cliente. Executa `AtualizarClienteUseCase`. Púb
 
 ## `DELETE /api/clientes/{id}`
 
-Exclui um cliente. Executa `ExcluirClienteUseCase`. Público. **204 No Content**. **404** se não existir. **409** se houver agendamento vinculado (constraint de chave estrangeira — `DataIntegrityViolationException`, ver tabela de erros abaixo).
+Exclui um cliente. Executa `ExcluirClienteUseCase`. **Exige login de Cliente, só do próprio cadastro** (`403` caso contrário). **204 No Content**. **404** se não existir. **409** se houver agendamento vinculado (constraint de chave estrangeira — `DataIntegrityViolationException`, ver tabela de erros abaixo).
 
 ## `POST /api/servicos`
 
@@ -121,14 +121,14 @@ Exclui um serviço do prestador autenticado. Executa `ExcluirServicoUseCase`. **
 
 ## `POST /api/agendamentos`
 
-Cria um agendamento. Executa `CriarAgendamentoUseCase`.
+Cria um agendamento. Executa `CriarAgendamentoUseCase`. **Exige login de Cliente** — o cliente é o da sessão (não vai mais no corpo; `403` para prestador logado, `401` sem login).
 
-**Request** (`CriarAgendamentoRequest`, todos os campos `@NotNull`):
+**Request** (`CriarAgendamentoRequest`; `profissionalId` é opcional se o prestador tem um único profissional — com mais de um, é obrigatório (`400` "Informe o profissional"); os demais campos `@NotNull`):
 ```json
 {
   "prestadorId": "uuid",
-  "clienteId": "uuid",
   "servicoId": "uuid",
+  "profissionalId": "uuid",
   "inicio": "2026-10-02T12:00:00Z",
   "fim": "2026-10-02T12:30:00Z"
 }
@@ -154,7 +154,7 @@ Cria um agendamento. Executa `CriarAgendamentoUseCase`.
 
 Consulta um agendamento. Executa `ConsultarAgendamentoUseCase`.
 
-**200 OK** (`AgendamentoResponse`, mesmo formato do objeto `agendamento` acima). **404** se não existir.
+**200 OK** (`AgendamentoResponse`, mesmo formato do objeto `agendamento` acima, inclui `profissionalId`). **Exige login**: só o cliente do agendamento ou o prestador dono (`403` para qualquer outro). **404** se não existir.
 
 ## `GET /api/agendamentos?prestadorId={uuid}`
 
@@ -162,7 +162,7 @@ Lista os agendamentos de um prestador (qualquer status, inclusive histórico). E
 
 ## `POST /api/agendamentos/{id}/cancelar`
 
-Cancela um agendamento. Executa `CancelarAgendamentoUseCase`.
+Cancela um agendamento. Executa `CancelarAgendamentoUseCase`. **Exige login**: o cliente do agendamento ou o prestador dono (`403` caso contrário).
 
 **200 OK** (`ResultadoCancelamentoResponse`):
 ```json
@@ -172,7 +172,23 @@ Cancela um agendamento. Executa `CancelarAgendamentoUseCase`.
 
 ## `POST /api/agendamentos/{id}/no-show`
 
-Marca no-show. Executa `MarcarNoShowUseCase`. **204 No Content**. **Erros:** `404`, `400` (marcado antes do horário do agendamento), `409` (transição inválida).
+Marca no-show. Executa `MarcarNoShowUseCase`. **Exige login de Prestador, o dono do agendamento** (`403` para cliente ou outro prestador). **204 No Content**. **Erros:** `404`, `400` (marcado antes do horário do agendamento), `409` (transição inválida).
+
+## `POST /api/auth/cliente/login`
+
+Login de cliente. Corpo `{ "email", "senha" }`. **200 OK** `{ "tipo": "CLIENTE", "prestadorId": null, "clienteId": "uuid", "nome": "..." }` + cookie de sessão. **401** credenciais inválidas (a mesma resposta para email inexistente e senha errada), **429** após 5 falhas seguidas (bloqueio de 5 min por email, contador separado do de prestadores). `POST /api/auth/logout` e `GET /api/auth/me` são os mesmos dos prestadores; `/me` devolve `tipo` (`PRESTADOR` com `prestadorId`, ou `CLIENTE` com `clienteId`).
+
+## `GET /api/profissionais?prestadorId={uuid}`
+
+Lista os profissionais de um estabelecimento (`[{ id, nome }]`, ordem alfabética). **Público** — a tela de agendamento precisa dele para escolher o profissional.
+
+## `POST /api/profissionais` · `PUT /api/profissionais/{id}` · `DELETE /api/profissionais/{id}`
+
+Cadastra / renomeia / exclui um profissional do estabelecimento logado (`{ "nome": "..." }`). **Exige login de Prestador**; `403` se o profissional é de outro estabelecimento; `400` ao excluir o último profissional; `409` se ele tiver agendamentos (chave estrangeira).
+
+## `GET|POST /api/profissionais/{id}/bloqueios` · `DELETE /api/profissionais/{id}/bloqueios/{bloqueioId}`
+
+Horários bloqueados na agenda do profissional. `POST` recebe `{ "inicio", "fim", "motivo" }` (`motivo` opcional) e devolve `{ id, inicio, fim, motivo }`. **Exige login de Prestador dono** (`403` caso contrário). Erros: `400` (período no passado), `409` (conflita com agendamento ativo ou com outro bloqueio do mesmo profissional).
 
 ## `POST /api/webhooks/pagamento`
 

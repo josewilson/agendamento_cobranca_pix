@@ -3,6 +3,7 @@ package br.com.josewilson.agendamento.domain.model.agendamento;
 import br.com.josewilson.agendamento.domain.exception.TransicaoDeStatusInvalidaException;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -206,7 +207,7 @@ class AgendamentoTest {
                 criadoEmNoPassadoDistante.plus(Duration.ofDays(1)).plus(Duration.ofHours(1)));
 
         Agendamento agendamento = Agendamento.reconstituir(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
-                ServicoId.novo(), periodoNoPassado, Dinheiro.de("100.00"), Dinheiro.de("30.00"),
+                ServicoId.novo(), ProfissionalId.novo(), periodoNoPassado, Dinheiro.de("100.00"), Dinheiro.de("30.00"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)),
                 criadoEmNoPassadoDistante, StatusAgendamento.CONCLUIDO, null);
 

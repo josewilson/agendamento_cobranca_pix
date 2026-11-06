@@ -19,6 +19,9 @@ public class AgendamentoJpaEntity {
     @Column(name = "prestador_id", nullable = false)
     private UUID prestadorId;
 
+    @Column(name = "profissional_id", nullable = false)
+    private UUID profissionalId;
+
     @Column(name = "cliente_id", nullable = false)
     private UUID clienteId;
 
@@ -60,6 +63,8 @@ public class AgendamentoJpaEntity {
 
     public UUID getPrestadorId() { return prestadorId; }
     public void setPrestadorId(UUID prestadorId) { this.prestadorId = prestadorId; }
+    public UUID getProfissionalId() { return profissionalId; }
+    public void setProfissionalId(UUID profissionalId) { this.profissionalId = profissionalId; }
 
     public UUID getClienteId() { return clienteId; }
     public void setClienteId(UUID clienteId) { this.clienteId = clienteId; }

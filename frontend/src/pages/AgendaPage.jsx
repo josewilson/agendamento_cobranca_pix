@@ -11,6 +11,7 @@ export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [servicos, setServicos] = useState([]);
+  const [profissionais, setProfissionais] = useState([]);
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -33,11 +34,13 @@ export default function AgendaPage() {
       api.get(`/api/agendamentos?prestadorId=${prestadorId}`),
       api.get('/api/clientes'),
       api.get(`/api/servicos?prestadorId=${prestadorId}`),
+      api.get(`/api/profissionais?prestadorId=${prestadorId}`),
     ])
-      .then(([listaAgendamentos, listaClientes, listaServicos]) => {
+      .then(([listaAgendamentos, listaClientes, listaServicos, listaProfissionais]) => {
         setAgendamentos(listaAgendamentos);
         setClientes(listaClientes);
         setServicos(listaServicos);
+        setProfissionais(listaProfissionais);
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false));
@@ -45,6 +48,10 @@ export default function AgendaPage() {
 
   function nomeCliente(clienteId) {
     return clientes.find((c) => c.id === clienteId)?.nome ?? '(cliente removido)';
+  }
+
+  function nomeProfissional(profissionalId) {
+    return profissionais.find((p) => p.id === profissionalId)?.nome ?? '—';
   }
 
   function nomeServico(servicoId) {
@@ -104,6 +111,7 @@ export default function AgendaPage() {
           <thead>
             <tr>
               <th>Início</th>
+              <th>Profissional</th>
               <th>Cliente</th>
               <th>Serviço</th>
               <th>Valor</th>
@@ -115,6 +123,7 @@ export default function AgendaPage() {
             {agendamentos.map((a) => (
               <tr key={a.id ?? a.inicio}>
                 <td>{new Date(a.inicio).toLocaleString('pt-BR')}</td>
+                <td>{nomeProfissional(a.profissionalId)}</td>
                 <td>{a.id ? nomeCliente(a.clienteId) : "—"}</td>
                 <td>{a.id ? nomeServico(a.servicoId) : "—"}</td>
                 <td>{a.id ? `R$ ${a.valorServico}` : "—"}</td>

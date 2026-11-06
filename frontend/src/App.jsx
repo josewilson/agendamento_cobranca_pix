@@ -6,6 +6,7 @@ import AgendaPage from './pages/AgendaPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import PrestadoresPage from './pages/PrestadoresPage.jsx';
 import ServicosPage from './pages/ServicosPage.jsx';
+import ProfissionaisPage from './pages/ProfissionaisPage.jsx';
 import ClientesPage from './pages/ClientesPage.jsx';
 import NovoAgendamentoPage from './pages/NovoAgendamentoPage.jsx';
 import AgendamentoPage from './pages/AgendamentoPage.jsx';
@@ -35,10 +36,32 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route
+              path="/profissionais"
+              element={
+                <RequireAuth>
+                  <ProfissionaisPage />
+                </RequireAuth>
+              }
+            />
             <Route path="/prestadores" element={<PrestadoresPage />} />
             <Route path="/clientes" element={<ClientesPage />} />
-            <Route path="/agendamentos/novo" element={<NovoAgendamentoPage />} />
-            <Route path="/agendamentos/:id" element={<AgendamentoPage />} />
+            <Route
+              path="/agendamentos/novo"
+              element={
+                <RequireAuth tipo="CLIENTE">
+                  <NovoAgendamentoPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agendamentos/:id"
+              element={
+                <RequireAuth tipo="QUALQUER">
+                  <AgendamentoPage />
+                </RequireAuth>
+              }
+            />
           </Routes>
         </main>
       </BrowserRouter>

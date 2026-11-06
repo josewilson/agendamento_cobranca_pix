@@ -11,6 +11,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.ResultadoCancelame
 import br.com.josewilson.agendamento.domain.model.agendamento.StatusAgendamento;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -44,7 +45,7 @@ class CancelarAgendamentoServiceTest {
     private Agendamento agendamentoConfirmadoDistante() {
         Periodo periodo = new Periodo(AGORA.plus(Duration.ofDays(5)), AGORA.plus(Duration.ofDays(5)).plus(Duration.ofMinutes(30)));
         Agendamento agendamento = Agendamento.criar(AgendamentoId.novo(), PrestadorId.novo(), ClienteId.novo(),
-                ServicoId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.de("30.00"),
+                ServicoId.novo(), ProfissionalId.novo(), periodo, Dinheiro.de("100.00"), Dinheiro.de("30.00"),
                 new PoliticaCancelamento(Duration.ofHours(24), BigDecimal.valueOf(100)), AGORA);
         agendamentoRepository.salvar(agendamento);
         return agendamento;

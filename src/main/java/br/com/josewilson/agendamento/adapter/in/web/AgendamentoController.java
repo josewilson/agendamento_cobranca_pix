@@ -1,6 +1,8 @@
 package br.com.josewilson.agendamento.adapter.in.web;
 
 import jakarta.validation.Valid;
+import br.com.josewilson.agendamento.adapter.in.web.security.AutorizacaoAgendamento;
+import br.com.josewilson.agendamento.adapter.in.web.security.ClientePrincipal;
 import br.com.josewilson.agendamento.adapter.in.web.security.PrestadorPrincipal;
 import br.com.josewilson.agendamento.adapter.in.web.dto.AgendamentoResponse;
 import br.com.josewilson.agendamento.adapter.in.web.dto.CriarAgendamentoRequest;
@@ -20,12 +22,13 @@ import br.com.josewilson.agendamento.application.port.in.ResultadoCriacaoAgendam
 import br.com.josewilson.agendamento.domain.model.agendamento.Agendamento;
 import br.com.josewilson.agendamento.domain.model.agendamento.AgendamentoId;
 import br.com.josewilson.agendamento.domain.model.agendamento.ResultadoCancelamento;
-import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -63,20 +66,24 @@ public class AgendamentoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CriarAgendamentoResponse criar(@Valid @RequestBody CriarAgendamentoRequest request) {
+    public CriarAgendamentoResponse criar(@Valid @RequestBody CriarAgendamentoRequest request,
+                                           @AuthenticationPrincipal ClientePrincipal cliente) {
+        // o cliente vem da sessao, nunca do corpo: ninguem agenda em nome de outro
         Periodo periodo = new Periodo(request.inicio(), request.fim());
         CriarAgendamentoCommand command = new CriarAgendamentoCommand(
                 new PrestadorId(request.prestadorId()),
-                new ClienteId(request.clienteId()),
+                cliente.clienteId(),
                 new ServicoId(request.servicoId()),
-                periodo);
+                periodo,
+                request.profissionalId() == null ? null : new ProfissionalId(request.profissionalId()));
         ResultadoCriacaoAgendamento resultado = criarAgendamentoUseCase.executar(command);
         return CriarAgendamentoResponse.de(resultado);
     }
 
     @GetMapping("/{id}")
-    public AgendamentoResponse consultar(@PathVariable UUID id) {
+    public AgendamentoResponse consultar(@PathVariable UUID id, Authentication authentication) {
         Agendamento agendamento = consultarAgendamentoUseCase.executar(new ConsultarAgendamentoQuery(new AgendamentoId(id)));
+        AutorizacaoAgendamento.exigirParticipante(agendamento, authentication);
         return AgendamentoResponse.de(agendamento);
     }
 
@@ -103,14 +110,18 @@ public class AgendamentoController {
     }
 
     @PostMapping("/{id}/cancelar")
-    public ResultadoCancelamentoResponse cancelar(@PathVariable UUID id) {
+    public ResultadoCancelamentoResponse cancelar(@PathVariable UUID id, Authentication authentication) {
+        AutorizacaoAgendamento.exigirParticipante(
+                consultarAgendamentoUseCase.executar(new ConsultarAgendamentoQuery(new AgendamentoId(id))), authentication);
         ResultadoCancelamento resultado = cancelarAgendamentoUseCase.executar(new CancelarAgendamentoCommand(new AgendamentoId(id)));
         return ResultadoCancelamentoResponse.de(resultado);
     }
 
     @PostMapping("/{id}/no-show")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void marcarNoShow(@PathVariable UUID id) {
+    public void marcarNoShow(@PathVariable UUID id, Authentication authentication) {
+        AutorizacaoAgendamento.exigirPrestadorDono(
+                consultarAgendamentoUseCase.executar(new ConsultarAgendamentoQuery(new AgendamentoId(id))), authentication);
         marcarNoShowUseCase.executar(new MarcarNoShowCommand(new AgendamentoId(id)));
     }
 }

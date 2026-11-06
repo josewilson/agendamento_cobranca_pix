@@ -2,6 +2,7 @@ package br.com.josewilson.agendamento.domain.model.agendamento;
 
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Dinheiro;
 import br.com.josewilson.agendamento.domain.model.shared.Periodo;
@@ -63,6 +64,6 @@ public final class AgendamentoTestDataBuilder {
         Periodo periodoFinal = periodo != null
                 ? periodo
                 : new Periodo(agora.plus(Duration.ofDays(2)), agora.plus(Duration.ofDays(2)).plus(Duration.ofHours(1)));
-        return Agendamento.criar(id, prestadorId, clienteId, servicoId, periodoFinal, valorServico, valorSinal, politica, agora);
+        return Agendamento.criar(id, prestadorId, clienteId, servicoId, ProfissionalId.novo(), periodoFinal, valorServico, valorSinal, politica, agora);
     }
 }

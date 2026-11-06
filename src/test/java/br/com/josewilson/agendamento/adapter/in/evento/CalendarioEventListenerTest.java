@@ -12,6 +12,7 @@ import br.com.josewilson.agendamento.domain.model.agendamento.ResultadoCancelame
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
+import br.com.josewilson.agendamento.domain.model.profissional.ProfissionalId;
 import br.com.josewilson.agendamento.domain.model.servico.Servico;
 import br.com.josewilson.agendamento.domain.model.servico.ServicoId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
@@ -59,7 +60,7 @@ class CalendarioEventListenerTest {
 
         Instant agora = Instant.now();
         Periodo periodo = new Periodo(agora.plus(Duration.ofDays(1)), agora.plus(Duration.ofDays(1)).plus(Duration.ofMinutes(60)));
-        agendamento = Agendamento.criar(AgendamentoId.novo(), prestadorId, cliente.id(), servico.id(), periodo,
+        agendamento = Agendamento.criar(AgendamentoId.novo(), prestadorId, cliente.id(), servico.id(), ProfissionalId.novo(), periodo,
                 servico.preco(), Dinheiro.de("45.00"), PoliticaCancelamento.padrao(), agora);
         agendamentoRepository.salvar(agendamento);
 
