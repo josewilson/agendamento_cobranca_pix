@@ -15,6 +15,7 @@ public class Cliente {
     private final DocumentoFiscal documento;
     private int quantidadeNoShow;
     private CanalPreferido canalPreferido = CanalPreferido.AMBOS;
+    private String senhaHash; // null = sem login (cliente legado); hash BCrypt gerado na aplicacao, nunca no dominio
 
     public Cliente(ClienteId id, String nome, Contato contato, DocumentoFiscal documento) {
         this(id, nome, contato, documento, 0);
@@ -35,6 +36,10 @@ public class Cliente {
                    CanalPreferido canalPreferido) {
         this(id, nome, contato, documento, quantidadeNoShow);
         definirCanalPreferido(canalPreferido);
+    }
+
+    public void definirSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
     }
 
     public void definirCanalPreferido(CanalPreferido canalPreferido) {
@@ -70,6 +75,7 @@ public class Cliente {
     public DocumentoFiscal documento() { return documento; }
     public int quantidadeNoShow() { return quantidadeNoShow; }
     public CanalPreferido canalPreferido() { return canalPreferido; }
+    public String senhaHash() { return senhaHash; }
 
     @Override
     public boolean equals(Object o) {

@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CadastrarClienteServiceTest {
 
     private final InMemoryClienteRepository clienteRepository = new InMemoryClienteRepository();
-    private final CadastrarClienteService service = new CadastrarClienteService(clienteRepository);
+    private final CadastrarClienteService service = new CadastrarClienteService(clienteRepository, new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder());
 
     @Test
     void deveCadastrarClienteComCpfValido() {
@@ -24,6 +24,23 @@ class CadastrarClienteServiceTest {
         assertThat(cliente.contato().email()).isEqualTo("maria@exemplo.com");
         assertThat(cliente.quantidadeNoShow()).isZero();
         assertThat(clienteRepository.buscarPorId(cliente.id())).contains(cliente);
+    }
+
+    @Test
+    void deveGuardarSomenteOHashDaSenhaEPermitirBuscarPorEmail() {
+        Cliente cliente = service.executar(new CadastrarClienteCommand(
+                "Maria Silva", "Maria@Exemplo.com", "11987654321", "11144477735", "CPF", null, "senha1234"));
+
+        assertThat(cliente.senhaHash()).isNotEqualTo("senha1234").startsWith("$2");
+        assertThat(clienteRepository.buscarPorEmail("maria@exemplo.com")).contains(cliente);
+    }
+
+    @Test
+    void clienteSemSenhaNaoTemLogin() {
+        service.executar(new CadastrarClienteCommand(
+                "Maria Silva", "maria@exemplo.com", "11987654321", "11144477735", "CPF"));
+
+        assertThat(clienteRepository.buscarPorEmail("maria@exemplo.com")).isEmpty();
     }
 
     @Test

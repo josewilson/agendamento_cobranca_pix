@@ -35,6 +35,11 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
     }
 
     @Override
+    public Optional<Cliente> buscarPorEmail(String email) {
+        return jpaRepository.findByEmailIgnoreCaseAndSenhaHashIsNotNull(email).map(ClienteMapper::paraDominio);
+    }
+
+    @Override
     public List<Cliente> buscarTodos() {
         return jpaRepository.findAll().stream().map(ClienteMapper::paraDominio).toList();
     }

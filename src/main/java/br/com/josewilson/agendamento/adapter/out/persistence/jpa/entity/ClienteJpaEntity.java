@@ -32,6 +32,9 @@ public class ClienteJpaEntity {
     @Column(name = "quantidade_no_show", nullable = false)
     private int quantidadeNoShow;
 
+    @Column(name = "senha_hash")
+    private String senhaHash;
+
     @Column(name = "canal_preferido", nullable = false)
     private String canalPreferido = "AMBOS";
 
@@ -55,6 +58,9 @@ public class ClienteJpaEntity {
 
     public String getDocumentoTipo() { return documentoTipo; }
     public void setDocumentoTipo(String documentoTipo) { this.documentoTipo = documentoTipo; }
+
+    public String getSenhaHash() { return senhaHash; }
+    public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
 
     public String getCanalPreferido() { return canalPreferido; }
     public void setCanalPreferido(String canalPreferido) { this.canalPreferido = canalPreferido; }

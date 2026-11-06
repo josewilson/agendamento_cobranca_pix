@@ -9,5 +9,6 @@ public record CadastrarClienteRequest(
         @NotBlank String telefone,
         @NotBlank String documentoNumero,
         @NotBlank String documentoTipo,
-        @Pattern(regexp = "(?i)AMBOS|EMAIL|WHATSAPP") String canalPreferido) {
+        @Pattern(regexp = "(?i)AMBOS|EMAIL|WHATSAPP") String canalPreferido,
+        @NotBlank @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$", message = "senha deve ter no minimo 8 caracteres, com letra e numero") String senha) {
 }

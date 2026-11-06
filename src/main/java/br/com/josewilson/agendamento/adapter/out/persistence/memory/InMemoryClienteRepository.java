@@ -31,6 +31,13 @@ public class InMemoryClienteRepository implements ClienteRepository {
     }
 
     @Override
+    public Optional<Cliente> buscarPorEmail(String email) {
+        return clientes.values().stream()
+                .filter(c -> c.senhaHash() != null && c.contato().email().equalsIgnoreCase(email))
+                .findFirst();
+    }
+
+    @Override
     public List<Cliente> buscarTodos() {
         return new ArrayList<>(clientes.values());
     }

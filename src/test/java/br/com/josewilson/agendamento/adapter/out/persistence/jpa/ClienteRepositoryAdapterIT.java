@@ -71,4 +71,18 @@ class ClienteRepositoryAdapterIT extends AbstractPersistenceIT {
         assertThat(pagina.itens().get(0).canalPreferido())
                 .isEqualTo(br.com.josewilson.agendamento.domain.model.cliente.CanalPreferido.WHATSAPP);
     }
+    @Test
+    void deveBuscarPorEmailSoQuemTemLoginIgnorandoMaiusculas() {
+        Cliente comLogin = new Cliente(ClienteId.novo(), "Com Login",
+                new Contato("Login@Exemplo.com", "11987654321"), DocumentoFiscal.cpf("111.444.777-35"));
+        comLogin.definirSenhaHash("$2a$10$hashfalsodeteste");
+        Cliente legado = new Cliente(ClienteId.novo(), "Legado",
+                new Contato("legado@exemplo.com", "11987654322"), DocumentoFiscal.cpf("529.982.247-25"));
+        clienteRepository.salvar(comLogin);
+        clienteRepository.salvar(legado);
+
+        assertThat(clienteRepository.buscarPorEmail("login@exemplo.com")).isPresent()
+                .get().extracting(Cliente::senhaHash).isEqualTo("$2a$10$hashfalsodeteste");
+        assertThat(clienteRepository.buscarPorEmail("legado@exemplo.com")).isEmpty();
+    }
 }

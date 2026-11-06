@@ -8,15 +8,18 @@ import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import br.com.josewilson.agendamento.domain.model.shared.Contato;
 import br.com.josewilson.agendamento.domain.model.shared.DocumentoFiscal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CadastrarClienteService implements CadastrarClienteUseCase {
 
     private final ClienteRepository clienteRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public CadastrarClienteService(ClienteRepository clienteRepository) {
+    public CadastrarClienteService(ClienteRepository clienteRepository, PasswordEncoder passwordEncoder) {
         this.clienteRepository = clienteRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -27,6 +30,9 @@ public class CadastrarClienteService implements CadastrarClienteUseCase {
         Cliente cliente = new Cliente(ClienteId.novo(), command.nome(), contato, documento);
         if (command.canalPreferido() != null) {
             cliente.definirCanalPreferido(CanalPreferido.valueOf(command.canalPreferido().toUpperCase()));
+        }
+        if (command.senha() != null) {
+            cliente.definirSenhaHash(passwordEncoder.encode(command.senha()));
         }
         return clienteRepository.salvar(cliente);
     }

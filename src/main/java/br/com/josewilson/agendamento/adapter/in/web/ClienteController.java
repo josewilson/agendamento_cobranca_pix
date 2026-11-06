@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import br.com.josewilson.agendamento.adapter.in.web.dto.AtualizarClienteRequest;
 import br.com.josewilson.agendamento.adapter.in.web.dto.CadastrarClienteRequest;
 import br.com.josewilson.agendamento.adapter.in.web.dto.ClienteResponse;
+import br.com.josewilson.agendamento.adapter.in.web.security.ClientePrincipal;
+import br.com.josewilson.agendamento.application.exception.AcessoNaoAutorizadoException;
 import br.com.josewilson.agendamento.application.port.in.AtualizarClienteCommand;
 import br.com.josewilson.agendamento.application.port.in.AtualizarClienteUseCase;
 import br.com.josewilson.agendamento.application.port.in.CadastrarClienteCommand;
@@ -14,6 +16,7 @@ import br.com.josewilson.agendamento.application.port.in.ListarClientesUseCase;
 import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
 import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,7 +56,7 @@ public class ClienteController {
     public ClienteResponse cadastrar(@Valid @RequestBody CadastrarClienteRequest request) {
         CadastrarClienteCommand command = new CadastrarClienteCommand(
                 request.nome(), request.email(), request.telefone(),
-                request.documentoNumero(), request.documentoTipo(), request.canalPreferido());
+                request.documentoNumero(), request.documentoTipo(), request.canalPreferido(), request.senha());
         Cliente cliente = cadastrarClienteUseCase.executar(command);
         return ClienteResponse.de(cliente);
     }
@@ -69,7 +72,9 @@ public class ClienteController {
     }
 
     @PutMapping("/{id}")
-    public ClienteResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarClienteRequest request) {
+    public ClienteResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarClienteRequest request,
+                                      @AuthenticationPrincipal ClientePrincipal principal) {
+        exigirProprioCliente(id, principal);
         AtualizarClienteCommand command = new AtualizarClienteCommand(
                 new ClienteId(id), request.nome(), request.email(), request.telefone(), request.canalPreferido());
         Cliente cliente = atualizarClienteUseCase.executar(command);
@@ -78,7 +83,15 @@ public class ClienteController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void excluir(@PathVariable UUID id) {
+    public void excluir(@PathVariable UUID id, @AuthenticationPrincipal ClientePrincipal principal) {
+        exigirProprioCliente(id, principal);
         excluirClienteUseCase.executar(new ExcluirClienteCommand(new ClienteId(id)));
+    }
+
+    /** Cliente so edita/exclui o proprio cadastro. */
+    private static void exigirProprioCliente(UUID id, ClientePrincipal principal) {
+        if (!principal.clienteId().valor().equals(id)) {
+            throw new AcessoNaoAutorizadoException("Voce so pode alterar o seu proprio cadastro");
+        }
     }
 }

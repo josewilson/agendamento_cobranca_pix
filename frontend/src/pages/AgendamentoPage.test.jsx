@@ -4,8 +4,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AgendamentoPage from './AgendamentoPage.jsx';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 vi.mock('../api/client', () => ({ api: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('../auth/AuthContext', () => ({ useAuth: vi.fn() }));
 
 const ID = 'abc-123';
 
@@ -32,6 +34,7 @@ function renderPagina() {
 describe('AgendamentoPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuth.mockReturnValue({ prestador: { prestadorId: 'p-1', nome: 'Clinica' }, cliente: null });
   });
 
   it('mostra o status e valores, nunca o id', async () => {
@@ -80,6 +83,15 @@ describe('AgendamentoPage', () => {
     expect(api.post).toHaveBeenCalledWith(`/api/agendamentos/${ID}/cancelar`, {});
     expect(await screen.findByText('Valor retido: R$ 30.00')).toBeInTheDocument();
     expect(screen.getByText('Valor reembolsado: R$ 0.00')).toBeInTheDocument();
+  });
+
+  it('cliente nao ve o botao de no-show', async () => {
+    useAuth.mockReturnValue({ prestador: null, cliente: { clienteId: 'c-1', nome: 'Maria' } });
+    api.get.mockResolvedValue(agendamento('CONFIRMADO'));
+    renderPagina();
+
+    expect(await screen.findByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Marcar no-show' })).not.toBeInTheDocument();
   });
 
   it('marca no-show', async () => {

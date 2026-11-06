@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 export default function AgendamentoPage() {
   const { id } = useParams();
+  const { prestador } = useAuth();
   const [agendamento, setAgendamento] = useState(null);
   const [resultadoCancelamento, setResultadoCancelamento] = useState(null);
   const [erro, setErro] = useState(null);
@@ -63,9 +65,11 @@ export default function AgendamentoPage() {
         <button onClick={() => executar('cancelar')} disabled={carregando}>
           Cancelar
         </button>
-        <button onClick={() => executar('no-show')} disabled={carregando}>
-          Marcar no-show
-        </button>
+        {prestador && (
+          <button onClick={() => executar('no-show')} disabled={carregando}>
+            Marcar no-show
+          </button>
+        )}
       </div>
 
       {erro && <p className="erro">{erro}</p>}

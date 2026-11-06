@@ -22,6 +22,7 @@ public final class ClienteMapper {
         entity.setDocumentoTipo(cliente.documento().tipo().name());
         entity.setQuantidadeNoShow(cliente.quantidadeNoShow());
         entity.setCanalPreferido(cliente.canalPreferido().name());
+        entity.setSenhaHash(cliente.senhaHash());
         return entity;
     }
 
@@ -29,7 +30,9 @@ public final class ClienteMapper {
         Contato contato = new Contato(entity.getEmail(), entity.getTelefone());
         DocumentoFiscal documento = new DocumentoFiscal(entity.getDocumentoNumero(),
                 DocumentoFiscal.TipoDocumento.valueOf(entity.getDocumentoTipo()));
-        return new Cliente(new ClienteId(entity.getId()), entity.getNome(), contato, documento,
+        Cliente cliente = new Cliente(new ClienteId(entity.getId()), entity.getNome(), contato, documento,
                 entity.getQuantidadeNoShow(), CanalPreferido.valueOf(entity.getCanalPreferido()));
+        cliente.definirSenhaHash(entity.getSenhaHash());
+        return cliente;
     }
 }

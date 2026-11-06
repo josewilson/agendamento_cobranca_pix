@@ -9,13 +9,15 @@ vi.mock('../api/client', () => ({
 }));
 
 function Consumidor() {
-  const { prestador, login, logout } = useAuth();
+  const { prestador, cliente, login, logout } = useAuth();
   return (
     <div>
       <span data-testid="estado">
         {prestador === undefined ? 'carregando' : prestador === null ? 'deslogado' : prestador.nome}
       </span>
+      <span data-testid="cliente">{cliente ? cliente.nome : 'sem-cliente'}</span>
       <button onClick={() => login('prestador@exemplo.com', 'senha123')}>entrar</button>
+      <button onClick={() => login('maria@exemplo.com', 'senha1234', 'CLIENTE')}>entrar-cliente</button>
       <button onClick={() => logout().catch(() => {})}>sair</button>
     </div>
   );
@@ -46,6 +48,21 @@ describe('AuthContext', () => {
 
     await waitFor(() => expect(screen.getByTestId('estado')).toHaveTextContent('Clinica Bem-Estar'));
     expect(api.post).toHaveBeenCalledWith('/api/auth/login', { email: 'prestador@exemplo.com', senha: 'senha123' });
+  });
+
+  it('login de cliente usa o endpoint proprio e nao vira prestador', async () => {
+    api.get.mockRejectedValue(new Error('nao autenticado'));
+    api.post.mockResolvedValue({ tipo: 'CLIENTE', clienteId: 'c-1', nome: 'Maria' });
+    const usuario = userEvent.setup();
+
+    render(<AuthProvider><Consumidor /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId('estado')).toHaveTextContent('deslogado'));
+
+    await usuario.click(screen.getByText('entrar-cliente'));
+
+    await waitFor(() => expect(screen.getByTestId('cliente')).toHaveTextContent('Maria'));
+    expect(screen.getByTestId('estado')).toHaveTextContent('deslogado'); // prestador segue null
+    expect(api.post).toHaveBeenCalledWith('/api/auth/cliente/login', { email: 'maria@exemplo.com', senha: 'senha1234' });
   });
 
   it('logout limpa o prestador mesmo se a chamada ao backend falhar', async () => {

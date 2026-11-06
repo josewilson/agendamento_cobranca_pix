@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [tipo, setTipo] = useState('PRESTADOR');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState(null);
@@ -15,8 +16,8 @@ export default function LoginPage() {
     setErro(null);
     setCarregando(true);
     try {
-      await login(email, senha);
-      navigate('/agenda');
+      await login(email, senha, tipo);
+      navigate(tipo === 'CLIENTE' ? '/agendamentos/novo' : '/agenda');
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -29,6 +30,13 @@ export default function LoginPage() {
       <h1>Entrar</h1>
 
       <form onSubmit={handleSubmit} className="form">
+        <label>
+          Entrar como
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="PRESTADOR">Prestador</option>
+            <option value="CLIENTE">Cliente</option>
+          </select>
+        </label>
         <label>
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -45,8 +53,8 @@ export default function LoginPage() {
       {erro && <p className="erro">{erro}</p>}
 
       <p>
-        Ainda não tem uma conta? Cadastre-se como prestador na tela de{' '}
-        <Link to="/prestadores">Prestadores</Link>.
+        Ainda não tem uma conta? Cadastre-se como <Link to="/prestadores">prestador</Link> ou como{' '}
+        <Link to="/clientes">cliente</Link>.
       </p>
     </div>
   );

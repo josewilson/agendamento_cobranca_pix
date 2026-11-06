@@ -1,5 +1,8 @@
 package br.com.josewilson.agendamento.adapter.in.web.security;
 
+import br.com.josewilson.agendamento.domain.model.cliente.Cliente;
+import br.com.josewilson.agendamento.domain.model.cliente.ClienteId;
+import br.com.josewilson.agendamento.domain.model.shared.Contato;
 import br.com.josewilson.agendamento.domain.model.prestador.Prestador;
 import br.com.josewilson.agendamento.domain.model.prestador.PrestadorId;
 import br.com.josewilson.agendamento.domain.model.shared.DocumentoFiscal;
@@ -16,6 +19,13 @@ import org.springframework.security.core.Authentication;
 public final class TestAutenticacao {
 
     private TestAutenticacao() {
+    }
+
+    public static Authentication doCliente(ClienteId clienteId) {
+        Cliente cliente = new Cliente(clienteId, "Maria Teste", new Contato("maria@exemplo.com", "11987654321"),
+                DocumentoFiscal.cpf("111.444.777-35"));
+        ClientePrincipal principal = new ClientePrincipal(cliente);
+        return new UsernamePasswordAuthenticationToken(principal, null, principal.authorities());
     }
 
     public static Authentication doPrestador(PrestadorId prestadorId) {

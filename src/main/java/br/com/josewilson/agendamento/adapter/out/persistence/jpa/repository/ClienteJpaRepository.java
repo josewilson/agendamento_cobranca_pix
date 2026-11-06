@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 public interface ClienteJpaRepository extends JpaRepository<ClienteJpaEntity, UUID> {
+
+    java.util.Optional<ClienteJpaEntity> findByEmailIgnoreCaseAndSenhaHashIsNotNull(String email);
 }

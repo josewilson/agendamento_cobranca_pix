@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import br.com.josewilson.agendamento.adapter.in.web.security.ClientePrincipal;
 import br.com.josewilson.agendamento.adapter.in.web.security.LoginBloqueadoException;
 import br.com.josewilson.agendamento.adapter.in.web.security.LoginRateLimiter;
 import br.com.josewilson.agendamento.adapter.in.web.security.PrestadorPrincipal;
@@ -12,7 +13,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -46,7 +46,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public PrestadorLogadoResponse login(@Valid @RequestBody LoginRequest request,
+    public SessaoResponse login(@Valid @RequestBody LoginRequest request,
                                           HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         if (loginRateLimiter.bloqueado(request.email())) {
             throw new LoginBloqueadoException("Muitas tentativas de login. Tente novamente em alguns minutos.");
@@ -67,7 +67,7 @@ public class AuthController {
         SecurityContextHolder.setContext(context);
         securityContextRepository.saveContext(context, httpRequest, httpResponse);
 
-        return PrestadorLogadoResponse.de((PrestadorPrincipal) authentication.getPrincipal());
+        return SessaoResponse.prestador((PrestadorPrincipal) authentication.getPrincipal());
     }
 
     @PostMapping("/logout")
@@ -78,16 +78,25 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public PrestadorLogadoResponse me(@AuthenticationPrincipal PrestadorPrincipal principal) {
-        return PrestadorLogadoResponse.de(principal);
+    public SessaoResponse me(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof ClientePrincipal cliente) {
+            return SessaoResponse.cliente(cliente);
+        }
+        return SessaoResponse.prestador((PrestadorPrincipal) principal);
     }
 
     public record LoginRequest(@NotBlank String email, @NotBlank String senha) {
     }
 
-    public record PrestadorLogadoResponse(java.util.UUID prestadorId, String nome) {
-        public static PrestadorLogadoResponse de(PrestadorPrincipal principal) {
-            return new PrestadorLogadoResponse(principal.prestadorId().valor(), principal.nome());
+    /** tipo = PRESTADOR (prestadorId preenchido) ou CLIENTE (clienteId preenchido). */
+    public record SessaoResponse(String tipo, java.util.UUID prestadorId, java.util.UUID clienteId, String nome) {
+        public static SessaoResponse prestador(PrestadorPrincipal principal) {
+            return new SessaoResponse("PRESTADOR", principal.prestadorId().valor(), null, principal.nome());
+        }
+
+        public static SessaoResponse cliente(ClientePrincipal principal) {
+            return new SessaoResponse("CLIENTE", null, principal.clienteId().valor(), principal.nome());
         }
     }
 }

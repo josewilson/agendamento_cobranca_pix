@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 export default function ClientesPage() {
+  const { prestador } = useAuth();
   const [clientes, setClientes] = useState([]);
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF', canalPreferido: 'AMBOS' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF', canalPreferido: 'AMBOS', senha: '' });
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState(null);
   const [carregando, setCarregando] = useState(false);
@@ -17,8 +20,10 @@ export default function ClientesPage() {
   }
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (prestador) {
+      carregar();
+    }
+  }, [prestador]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -27,9 +32,11 @@ export default function ClientesPage() {
     setCarregando(true);
     try {
       await api.post('/api/clientes', form);
-      setForm({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF', canalPreferido: 'AMBOS' });
+      setForm({ nome: '', email: '', telefone: '', documentoNumero: '', documentoTipo: 'CPF', canalPreferido: 'AMBOS', senha: '' });
       setSucesso(true);
-      await carregar();
+      if (prestador) {
+        await carregar();
+      }
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -78,6 +85,17 @@ export default function ClientesPage() {
               </select>
             </label>
             <label>
+              Senha
+              <input
+                type="password"
+                value={form.senha}
+                onChange={(e) => setForm({ ...form, senha: e.target.value })}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+            <label>
               Receber avisos por
               <select
                 value={form.canalPreferido}
@@ -95,10 +113,13 @@ export default function ClientesPage() {
 
           {erro && <p className="erro">{erro}</p>}
           {sucesso && (
-            <div className="aviso-sucesso">Cliente cadastrado! Já aparece na lista e na tela de novo agendamento.</div>
+            <div className="aviso-sucesso">
+              Cliente cadastrado! Agora é só <Link to="/login">entrar</Link> como cliente para agendar.
+            </div>
           )}
         </aside>
 
+        {prestador && (
         <section className="painel-conteudo">
           <h2>Clientes cadastrados</h2>
           <table className="tabela">
@@ -120,6 +141,7 @@ export default function ClientesPage() {
             </tbody>
           </table>
         </section>
+        )}
       </div>
     </div>
   );

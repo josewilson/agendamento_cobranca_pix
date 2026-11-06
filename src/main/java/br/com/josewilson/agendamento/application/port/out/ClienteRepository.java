@@ -12,6 +12,9 @@ public interface ClienteRepository {
 
     Optional<Cliente> buscarPorId(ClienteId id);
 
+    /** Cliente que tem login (senha cadastrada) com esse email, ignorando maiusculas. */
+    Optional<Cliente> buscarPorEmail(String email);
+
     List<Cliente> buscarTodos();
 
     Pagina<Cliente> buscarPagina(int page, int size);
